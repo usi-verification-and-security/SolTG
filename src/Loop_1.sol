@@ -8,6 +8,7 @@ contract Loop_1 {
 		do {
 			_x = _x + 1;
 		} while (_x < 10);
+		assert(_x > 0);
 		return _x;
 	}
     
@@ -36,6 +37,7 @@ contract Loop_1 {
             _i = _i + 1;
             if (_i > 100){return 0;}
         }
+        assert(_x > 0);
         return 1;
 	}
 }
