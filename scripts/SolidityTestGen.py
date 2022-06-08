@@ -11,13 +11,15 @@ import random
 """
 
 def init():
-    global SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH
     #Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
     SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
+    TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
     TIMEOUT = 30
+    SOLVER_TYPE = "eld" # "z3"
 
 
 def clean_dir(dir):
@@ -76,7 +78,36 @@ def list_to_string(lst):
     return ' '.join([str(e) for e in lst])
 
 
-def command_executer(command, timeout, file):
+def command_executer(command, timeout, log_file, output_file):
+    print("command: {}".format(str(command)))
+    f = open(output_file, "w")
+    logger(log_file, list_to_string(command))
+    with subprocess.Popen(command, stdout=f, stderr=subprocess.PIPE) as process:
+        try:
+            stdout, stderr = process.communicate(input, timeout=timeout)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            mesage = 'command: {} has been killed after timeout {}'.format(list_to_string(command), timeout)
+            print(mesage)
+            stdout, stderr = process.communicate()
+            logger(log_file, str(stdout))
+            logger(log_file, str(stderr))
+        except Exception:
+            process.kill()
+            process.wait()
+            mesage = 'command: {} has been killed after timeout {}'.format(list_to_string(command), timeout)
+            print(mesage)
+            logger(log_file, mesage)
+            raise
+        retcode = process.poll()
+        logger(log_file, [process.args, retcode, stdout, stderr])
+        if retcode and retcode != 254:
+            return False
+        else:
+            return True
+
+
+def command_executer_docker_solcmc(command, timeout, file):
     print("command: {}".format(str(command)))
     logger(file, list_to_string(command))
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
@@ -89,9 +120,6 @@ def command_executer(command, timeout, file):
             stdout, stderr = process.communicate()
             logger(file, str(stdout))
             logger(file, str(stderr))
-            # raise subprocess.TimeoutExpired(
-            #     process.args, timeout, output=stdout, stderr=stderr,
-            # )
         except Exception:
             process.kill()
             process.wait()
@@ -105,7 +133,22 @@ def command_executer(command, timeout, file):
         if retcode and retcode != 254:
             return False
         else:
-            return True
+            # start with "Running with solver" and terminate with "Entire output"
+            start = False
+            out = []
+            to_ckeck = str(stdout).split("\\n")
+            for s in to_ckeck:
+                if "Entire output" in str(s):
+                    break
+                if start:
+                    out.append(s)
+                if "Running with solver" in str(s):
+                    start = True
+            # add "(set-option :produce-proofs true)"
+            # add "(get-proof)"
+            out.insert(1, "(set-option :produce-proofs true)\n")
+            out.append("(get-proof)\n")
+            return out
 
 def run_solcmc(updated_file_name, contract_name):
     # ./docker_solcmc examples smoke_safe.sol Smoke 30 z3
@@ -113,9 +156,19 @@ def run_solcmc(updated_file_name, contract_name):
     os.chdir(SOLCMC)
     basename = os.path.basename(updated_file_name)
     smt_name = os.path.splitext(basename)[0] + '.smt2'
-    command = [DOCKER_SOLCMC, "tmp", basename,
-               contract_name, str(30), 'z3', '>', smt_name]
-    command_executer(command, 60, "tmp/log.txt")
+    command = ["./docker_solcmc_updated", "tmp", basename,
+               contract_name, str(30), SOLVER_TYPE] #, '>', smt_name]
+    smt2_list = command_executer_docker_solcmc(command, 60, "tmp/log.txt")
+    os.chdir(save)
+    return smt2_list
+
+
+def run_adt_transform(smt2_file, smt2_wo_adt):
+    print("run adt_transform script")
+    save = os.getcwd()
+    os.chdir(SANDBOX_DIR)
+    command = [ADT_DIR, smt2_file] #, ">", smt2_wo_adt]
+    command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
     os.chdir(save)
 
 
@@ -150,7 +203,21 @@ def update_file(file):
     f.close()
     print(updated_file_name)
     print(contract_name)
-    run_solcmc(updated_file_name, contract_name)
+    smt2_list = run_solcmc(updated_file_name, contract_name)
+    # move to sanbox
+    source = SOLCMC + "/tmp"
+    destination = os.path.abspath(SANDBOX_DIR)
+    allfiles = os.listdir(source)
+    for e in allfiles:
+        shutil.move(source + "/" + e, destination + "/" + e)
+
+    smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".smt2"
+    f_smt = open(smt2_file, 'a')
+    f_smt.writelines(smt2_list)
+    f_smt.close()
+    smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
+    run_adt_transform(smt2_file, smt2_wo_adt)
+
 
 
 def move_for_encoding(file):
@@ -163,10 +230,24 @@ def move_for_encoding(file):
     update_file(new_file)
 
 
+def run_tg(file):
+    basename = os.path.basename(file)
+    smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
+    new_smt_file_name = SANDBOX_DIR + "/" + smt_name
+    print("run TG with".format(new_smt_file_name))
+    print("{} {} {}".format(TG_PATH, "--keys <keys_valus_to_be_define> ", new_smt_file_name))
+
+
+def run_test(file):
+    basename = os.path.basename(file)
+    new_name = SANDBOX_DIR + "/" + basename
+    print("Run tests for: {} ".format(new_name))
+
+
 def main():
     start_time = time.time()
     init()
-    global SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE,SANDBOX_DIR, TG_PATH
     parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
     insourse = ['-i', '--input_source']
     kwsourse = {'type': str, 'help': 'Input .c-file. or directory'}
@@ -186,7 +267,11 @@ def main():
         print('invalid input_source: {}'.format(args.input_source))
         exit(1)
 
+    clean_dir(SANDBOX_DIR)
+
     move_for_encoding(file)
+    run_tg(file)
+    run_test(file)
 
     tt = time.time() - start_time
     print('TG total time: {} seconds or {} hours'.format(tt, tt / 3600))
