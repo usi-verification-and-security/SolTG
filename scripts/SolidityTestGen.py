@@ -146,8 +146,8 @@ def command_executer_docker_solcmc(command, timeout, file):
                     start = True
             # add "(set-option :produce-proofs true)"
             # add "(get-proof)"
-            out.insert(1, "(set-option :produce-proofs true)\n")
-            out.append("(get-proof)\n")
+            # out.insert(1, "(set-option :produce-proofs true)\n")
+            # out.append("(get-proof)\n")
             return out
 
 def run_solcmc(updated_file_name, contract_name):
@@ -186,7 +186,10 @@ def update_file(file):
             out.append(l)
             for t in tockens:
                 if next:
-                    contract_name = t
+                    if t[-1] == '{':
+                        contract_name = t[:-1]
+                    else:
+                        contract_name = t
                     break
                 if t == "contract":
                     next = True
