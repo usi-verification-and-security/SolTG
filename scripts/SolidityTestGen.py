@@ -18,8 +18,8 @@ def init():
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
     TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
-    TIMEOUT = 30
-    SOLVER_TYPE = "eld" # "z3"
+    TIMEOUT = 900
+    SOLVER_TYPE = "z3" #"eld" # "z3"
 
 
 def clean_dir(dir):
@@ -141,7 +141,7 @@ def command_executer_docker_solcmc(command, timeout, file):
                 if "Entire output" in str(s):
                     break
                 if start:
-                    out.append(s)
+                    out.append(s + "\n")
                 if "Running with solver" in str(s):
                     start = True
             # add "(set-option :produce-proofs true)"
@@ -157,8 +157,8 @@ def run_solcmc(updated_file_name, contract_name):
     basename = os.path.basename(updated_file_name)
     smt_name = os.path.splitext(basename)[0] + '.smt2'
     command = ["./docker_solcmc_updated", "tmp", basename,
-               contract_name, str(30), SOLVER_TYPE] #, '>', smt_name]
-    smt2_list = command_executer_docker_solcmc(command, 60, "tmp/log.txt")
+               contract_name, str(10), SOLVER_TYPE] #, '>', smt_name]
+    smt2_list = command_executer_docker_solcmc(command, TIMEOUT, "tmp/log.txt")
     os.chdir(save)
     return smt2_list
 
@@ -211,12 +211,13 @@ def update_file(file):
     for e in allfiles:
         shutil.move(source + "/" + e, destination + "/" + e)
 
-    smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".smt2"
-    f_smt = open(smt2_file, 'a')
-    f_smt.writelines(smt2_list)
-    f_smt.close()
-    smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
-    run_adt_transform(smt2_file, smt2_wo_adt)
+    if smt2_list:
+        smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".smt2"
+        f_smt = open(smt2_file, 'a')
+        f_smt.writelines(smt2_list)
+        f_smt.close()
+        smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
+        run_adt_transform(smt2_file, smt2_wo_adt)
 
 
 
@@ -244,28 +245,31 @@ def run_test(file):
     print("Run tests for: {} ".format(new_name))
 
 
-def main():
+def main(filename):
     start_time = time.time()
     init()
     global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE,SANDBOX_DIR, TG_PATH
-    parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
-    insourse = ['-i', '--input_source']
-    kwsourse = {'type': str, 'help': 'Input .c-file. or directory'}
-    parser.add_argument(*insourse, **kwsourse)
+    if not filename:
+        parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
+        insourse = ['-i', '--input_source']
+        kwsourse = {'type': str, 'help': 'Input .c-file. or directory'}
+        parser.add_argument(*insourse, **kwsourse)
 
-    args = parser.parse_args()
-    print(args)
-    file = ""
-    if args.input_source is not None:
-        if os.path.isfile(args.input_source):
-            file = args.input_source
-            print('solidity input file was set to {}'.format(file))
-        elif os.path.isdir(args.input_source):
-            print('TBD'.format(args.input_source))
+        args = parser.parse_args()
+        print(args)
+        file = ""
+        if args.input_source is not None:
+            if os.path.isfile(args.input_source):
+                file = args.input_source
+                print('solidity input file was set to {}'.format(file))
+            elif os.path.isdir(args.input_source):
+                print('TBD'.format(args.input_source))
+                exit(1)
+        else:
+            print('invalid input_source: {}'.format(args.input_source))
             exit(1)
     else:
-        print('invalid input_source: {}'.format(args.input_source))
-        exit(1)
+        file = filename
 
     clean_dir(SANDBOX_DIR)
 
@@ -274,8 +278,10 @@ def main():
     run_test(file)
 
     tt = time.time() - start_time
-    print('TG total time: {} seconds or {} hours'.format(tt, tt / 3600))
+    to_print_var = 'total time: {} seconds'.format(time.time() - start_time)
+    print(to_print_var)
+    logger(SANDBOX_DIR + '/log.txt', to_print_var)
 
 
 if __name__ == "__main__":
-    main()
+    main("")
