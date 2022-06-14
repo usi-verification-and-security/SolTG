@@ -5,20 +5,26 @@ import glob
 import subprocess
 import time
 from datetime import datetime
-import random
+from sys import platform
 
 """ Init SetUp 
 """
 
 def init():
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT
     #Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
-    SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
+    if platform == "darwin":
+        SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
+        ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
+        TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
+    if platform == "linux" or platform == "linux2":
+        SOLCMC = "/home/fmfsu/Dev/blockchain/cav_2022_artifact"
+        ADT_DIR = "/home/fmfsu/Dev/blockchain/adt_transform/target/debug/adt_transform"
+        TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
-    ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
-    TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
     TIMEOUT = 900
+    TG_TIMEOUT = 200
     SOLVER_TYPE = "z3" #"eld" # "z3"
 
 
@@ -80,7 +86,7 @@ def list_to_string(lst):
 
 def command_executer(command, timeout, log_file, output_file):
     print("command: {}".format(str(command)))
-    f = open(output_file, "w")
+    f = open(output_file, "a")
     logger(log_file, list_to_string(command))
     with subprocess.Popen(command, stdout=f, stderr=subprocess.PIPE) as process:
         try:
@@ -137,8 +143,11 @@ def command_executer_docker_solcmc(command, timeout, file):
             start = False
             out = []
             to_ckeck = str(stdout).split("\\n")
+            number_of_set_logic_HORN = 0
             for s in to_ckeck:
-                if "Entire output" in str(s):
+                if "(set-logic HORN)" in str(s):
+                    number_of_set_logic_HORN += 1
+                if "Entire output" in str(s) or number_of_set_logic_HORN > 1:
                     break
                 if start:
                     out.append(s + "\n")
@@ -239,7 +248,14 @@ def run_tg(file):
     smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
     new_smt_file_name = SANDBOX_DIR + "/" + smt_name
     print("run TG with".format(new_smt_file_name))
-    print("{} {} {}".format(TG_PATH, "--keys <keys_valus_to_be_define> ", new_smt_file_name))
+    logger(SANDBOX_DIR + '/log.txt', "run TG with".format(new_smt_file_name))
+    to_print = "{} {} {}".format(TG_PATH, "--keys <keys_valus_to_be_define> ", new_smt_file_name)
+    print(to_print)
+    log_file = SANDBOX_DIR + "/log.txt"
+    logger(log_file, to_print)
+    command_tg = [TG_PATH, '--inv-mode', '0', '--no-term' '--keys', '4271,13242',
+                  new_smt_file_name]
+    command_executer(command_tg, TG_TIMEOUT, log_file, log_file)
 
 
 def run_test(file):
@@ -251,7 +267,7 @@ def run_test(file):
 def main(filename):
     start_time = time.time()
     init()
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE,SANDBOX_DIR, TG_PATH
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE,SANDBOX_DIR, TG_PATH, TG_TIMEOUT
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']

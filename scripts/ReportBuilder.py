@@ -56,9 +56,9 @@ class html_report:
         log = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'log.txt']
         out = ''
         if len(log) >= 1:
-            what_to_check = ["Nonlinear CHC is currently unsupported",
-                             "Error: key \d+ not found",
-                             "Bitcode was not properly read"]
+            what_to_check = ["Multiple queries are not supported",
+                             "Assertion failed",
+                             "Done with TG"]
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:
@@ -123,10 +123,9 @@ class html_report:
                 html_report.create_hyperlinnk_to_file(subd))
             table += "    <td>{0}<br/>\n".format(
                 html_report.create_hyperlinnk_to_file(line + '/' + os.path.basename(line) + '.sol'))
-            table += "    <td>{0}<br/>{1}<br/>{2}</td>\n".format(html_report.get_smt2_file(line),
-                                                                            html_report.get_log_file(line),
-                                                                            html_report.get_extra_info_from_log(line))
-            table += "    <td>{0}</td>\n".format(html_report.get_tests_info(line))
+            table += "    <td>{0}<br/>{1}<br/></td>\n".format(html_report.get_smt2_file(line),
+                                                                            html_report.get_log_file(line))
+            table += "    <td>{0}<br/>{1}</td>\n".format(html_report.get_tests_info(line), html_report.get_extra_info_from_log(line))
             table += "    <td>{0}</td>\n".format(html_report.get_coverage_data(line))
             table += "    <td>{0}</td>\n".format(str(html_report.get_time_consumed(line)) + ' seconds')
             table += "  </tr>\n"

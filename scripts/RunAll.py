@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 import SolidityTestGen
-from scripts.ReportBuilder import html_report
+from ReportBuilder import html_report
 
 """ Tools location
 """
