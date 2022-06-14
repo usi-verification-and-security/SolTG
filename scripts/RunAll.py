@@ -146,6 +146,7 @@ def main_pipeline(files):
 
 
 def main():
+    start_time = time.time()
     init()
     global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
     parser = argparse.ArgumentParser(description='python script to run Sol Test Generation for all files in dir')
@@ -184,6 +185,9 @@ def main():
     main_pipeline(files)
     html_report.buildReport(OUTPUTDIR)
     # html_report.buildReport_Excel_klee(SANDBOX_DIR)
+    tt = time.time() - start_time
+    to_print_var = 'total time: {} seconds'.format(tt)
+    print(to_print_var)
 
 
 if __name__ == "__main__":

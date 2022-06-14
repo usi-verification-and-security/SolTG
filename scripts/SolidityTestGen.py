@@ -1,5 +1,6 @@
 import argparse
 import os
+import random
 import shutil
 import glob
 import subprocess
@@ -10,9 +11,10 @@ from sys import platform
 """ Init SetUp 
 """
 
+
 def init():
     global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT
-    #Dockerfile-solcmc
+    # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
     if platform == "darwin":
         SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
@@ -24,8 +26,8 @@ def init():
         TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 200
-    SOLVER_TYPE = "z3" #"eld" # "z3"
+    TG_TIMEOUT = 60
+    SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
 def clean_dir(dir):
@@ -80,6 +82,7 @@ def logger(file, content):
 
 """ converts list ot string with spaces"""
 
+
 def list_to_string(lst):
     return ' '.join([str(e) for e in lst])
 
@@ -96,8 +99,8 @@ def command_executer(command, timeout, log_file, output_file):
             mesage = 'command: {} has been killed after timeout {}'.format(list_to_string(command), timeout)
             print(mesage)
             stdout, stderr = process.communicate()
-            logger(log_file, str(stdout))
-            logger(log_file, str(stderr))
+            #logger(log_file, str(stdout))
+            #logger(log_file, str(stderr))
         except Exception:
             process.kill()
             process.wait()
@@ -124,8 +127,8 @@ def command_executer_docker_solcmc(command, timeout, file):
             mesage = 'command: {} has been killed after timeout {}'.format(list_to_string(command), timeout)
             print(mesage)
             stdout, stderr = process.communicate()
-            logger(file, str(stdout))
-            logger(file, str(stderr))
+            # logger(file, str(stdout))
+            # logger(file, str(stderr))
         except Exception:
             process.kill()
             process.wait()
@@ -159,6 +162,7 @@ def command_executer_docker_solcmc(command, timeout, file):
             # out.append("(get-proof)\n")
             return out
 
+
 def run_solcmc(updated_file_name, contract_name):
     # ./docker_solcmc examples smoke_safe.sol Smoke 30 z3
     save = os.getcwd()
@@ -166,7 +170,7 @@ def run_solcmc(updated_file_name, contract_name):
     basename = os.path.basename(updated_file_name)
     smt_name = os.path.splitext(basename)[0] + '.smt2'
     command = ["./docker_solcmc_updated", "tmp", basename,
-               contract_name, str(10), SOLVER_TYPE] #, '>', smt_name]
+               contract_name, str(10), SOLVER_TYPE]  # , '>', smt_name]
     smt2_list = command_executer_docker_solcmc(command, TIMEOUT, "tmp/log.txt")
     os.chdir(save)
     return smt2_list
@@ -176,9 +180,24 @@ def run_adt_transform(smt2_file, smt2_wo_adt):
     print("run adt_transform script")
     save = os.getcwd()
     os.chdir(SANDBOX_DIR)
-    command = [ADT_DIR, smt2_file] #, ">", smt2_wo_adt]
+    command = [ADT_DIR, smt2_file]  # , ">", smt2_wo_adt]
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
     os.chdir(save)
+
+
+def get_fun_signature(line):
+    start = line.index("function") + len("function")
+    end = line.index(")", start + 1)
+    function_all = line[start:end + 1].strip()
+    function_name = function_all[:function_all.index("(")]
+    out = [function_name]
+    inside = function_all[function_all.index("(") + 1: function_all.index(")")]
+    if inside:
+        raw_paramentes = inside.split(',')
+        for p in raw_paramentes:
+            out.append(p.split()[0])
+    # ToDo: add types of parameters
+    return out
 
 
 def update_file(file):
@@ -186,10 +205,17 @@ def update_file(file):
     contract_name = ""
     f = open(file, "r", encoding='ISO-8859-1')
     lines_to_check = f.readlines()
+    signature = []
+    signature_tmp = []
     out = []
     for l in lines_to_check:
+        if l.startswith("//"):
+            continue
         if "contract" in l:
             print("contract found")
+            if signature_tmp:
+                signature.append(signature_tmp)
+                signature_tmp = []
             tockens = l.split()
             next = False
             out.append(l)
@@ -202,10 +228,17 @@ def update_file(file):
                     break
                 if t == "contract":
                     next = True
+            signature_tmp.append(contract_name)
+        elif "function" in l:
+            out.append(l)
+            signature_tmp.append(get_fun_signature(l))
         elif "pragma solidity" in l:
             print("pragma solidity is found")
         else:
             out.append(l)
+
+    signature.append(signature_tmp)
+    logger(SANDBOX_DIR + "/log.txt", "File signature: \n" + str(signature))
     basename = os.path.basename(file)
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
                         "_updated" + os.path.splitext(basename)[1]
@@ -221,7 +254,10 @@ def update_file(file):
     destination = os.path.abspath(SANDBOX_DIR)
     allfiles = os.listdir(source)
     for e in allfiles:
-        shutil.move(source + "/" + e, destination + "/" + e)
+        if e == "log.txt":
+            shutil.move(source + "/" + e, destination + "/log_encoding.txt")
+        else:
+            shutil.move(source + "/" + e, destination + "/" + e)
 
     if smt2_list:
         smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".smt2"
@@ -230,7 +266,7 @@ def update_file(file):
         f_smt.close()
         smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
         run_adt_transform(smt2_file, smt2_wo_adt)
-
+    return signature
 
 
 def move_for_encoding(file):
@@ -240,7 +276,7 @@ def move_for_encoding(file):
     prepare_dir(tmp_dir)
     new_file = tmp_dir + "/" + os.path.basename(file)
     shutil.copyfile(file, new_file)
-    update_file(new_file)
+    return update_file(new_file)
 
 
 def run_tg(file):
@@ -258,16 +294,67 @@ def run_tg(file):
     command_executer(command_tg, TG_TIMEOUT, log_file, log_file)
 
 
-def run_test(file):
+def is_fun_supported(fun_signature):
+    # currently only int formate is supported
+    for f in fun_signature:
+        if f != "uint":
+            return False
+    return True
+
+
+def generate_stub(file_name, signature):
+    name_wo_extension = os.path.splitext(file_name)[0]
+    test_name = name_wo_extension + ".t.sol"
+    test_file_full_path = "../test/" + test_name
+    test_file = open(test_file_full_path, 'w')
+    out = ["//Generated Test by TG\n", "//{}\n".format(str(signature)),
+           "pragma solidity ^0.8.13;\n\n",
+           "import \"forge-std/Test.sol\";\n",
+           "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
+           f'contract {name_wo_extension}_Test is Test' + '{\n']
+
+    # contracts declaration
+    for i, c in enumerate(signature):
+        out.append("\t{} {};\n".format(c[0], "c" + str(i)))
+
+    # generate setUp function
+    out.append("\n")
+    out.append("\tfunction setUp() public {\n")
+    for i, c in enumerate(signature):
+        out.append("\t\t{} = new {}();\n".format("c" + str(i), c[0]))
+    out.append("\t}\n")
+
+    # generate Tests : one test for each function for each contract
+    index = 0
+    out.append("\n")
+    for i, c in enumerate(signature):
+        if len(c) > 1:
+            for j, funcs in enumerate(c[1:]):
+                check = is_fun_supported(funcs[1:])
+                if check:
+                    #generate random content
+                    content = ','.join([str(random.randint(1, 30)) for e in funcs[1:]])
+                    out.append(f'\tfunction test_{name_wo_extension}_{index}() public ' + '{\n')
+                    out.append("\t\t{}.{}({});\n".format("c" + str(i), funcs[0], content))
+                    out.append("\t\tassertTrue(true);\n\t}\n")
+                    index += 1
+
+    out.append("}\n")
+    test_file.writelines(out)
+    test_file.close()
+
+
+def run_test(file, signature):
     basename = os.path.basename(file)
     new_name = SANDBOX_DIR + "/" + basename
     print("Run tests for: {} ".format(new_name))
+    generate_stub(basename, signature)
 
 
 def main(filename):
     start_time = time.time()
     init()
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE,SANDBOX_DIR, TG_PATH, TG_TIMEOUT
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']
@@ -292,9 +379,9 @@ def main(filename):
 
     clean_dir(SANDBOX_DIR)
 
-    move_for_encoding(file)
+    signature = move_for_encoding(file)
     run_tg(file)
-    run_test(file)
+    run_test(file, signature)
 
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(time.time() - start_time)

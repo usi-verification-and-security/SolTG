@@ -58,7 +58,8 @@ class html_report:
         if len(log) >= 1:
             what_to_check = ["Multiple queries are not supported",
                              "Assertion failed",
-                             "Done with TG"]
+                             "Done with TG",
+                             "array operation requires one sort parameter"]
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:
