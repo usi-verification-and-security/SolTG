@@ -24,6 +24,14 @@ class html_report:
         else:
             return "NaN"
 
+    def create_hyperlinnk_to_test_file(text):
+        if not text:
+            return "NaN"
+        if os.path.exists(text):
+            return "<a href=\"{0}\">{1} </a>\n".format(text, "test")
+        else:
+            return "NaN"
+
     def smt2_status(ll):
         if "smt2" not in ll:
             return "-"
@@ -51,6 +59,19 @@ class html_report:
         else:
             return "-"
 
+    def parse_result_line(line):
+        tmp = line.split(';')
+        tmp_1 = tmp[0].split()
+        out = ''
+        if tmp_1[-2].isnumeric():
+            if int(tmp_1[-2]) > 0:
+               out += "<br/><font color=green>{}</font> ".format(tmp_1[-2] + " " + tmp_1[-1])
+        tmp_2 = tmp[1].split()
+        if tmp_2[-2].isnumeric():
+            if int(tmp_2[-2]) > 0:
+                out += "<br/><font color=red>{}</font> ".format(tmp[1])
+        return out
+
     @classmethod
     def get_extra_info_from_log(cls, dir):
         log = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'log.txt']
@@ -72,20 +93,6 @@ class html_report:
 
 
     @classmethod
-    def get_liner_chcs(self, dir):
-        out = []
-        exclude = ['final_coverage_report_wc_header', 'final_coverage_report', '4TestCov']
-        source_files = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) not in exclude]
-        for d in source_files:
-            log_file = d + "/log.txt"
-            if not html_report.is_nonlinear(log_file):
-                tmp = os.path.basename(d)
-                out.append(tmp)
-                print(tmp)
-        return out
-
-
-    @classmethod
     def clear_benchmarkdir(self, dir, nonlinear):
         for n in nonlinear:
             tmp = dir + "/" + n + ".c"
@@ -95,8 +102,27 @@ class html_report:
 
 
     @classmethod
-    def get_tests_info(cls, line):
-        return "No info"
+    def get_tests_info(cls, dir):
+        test_results = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'test_results.txt']
+        out = ''
+        if len(test_results) >= 1:
+            what_to_check = ["No tests match",
+                             "Unnamed return variable",
+                             "Done with TG",
+                             "array operation requires one sort parameter"]
+            filein = open(test_results[0], "r", encoding='ISO-8859-1')
+            lines = filein.readlines()
+            for line in lines:
+                if "Test result:" in line:
+                    out += "<br/>" + cls.parse_result_line(line)
+            for w in what_to_check:
+                for line in lines:
+                    if re.search(w, line):
+                        out += "<br/>" + "<font color=8B008B>{}</font>\n".format(w)
+                        break
+            return out
+        else:
+            return "No info"
 
     @classmethod
     def get_coverage_data(cls, line):
@@ -124,9 +150,13 @@ class html_report:
                 html_report.create_hyperlinnk_to_file(subd))
             table += "    <td>{0}<br/>\n".format(
                 html_report.create_hyperlinnk_to_file(line + '/' + os.path.basename(line) + '.sol'))
-            table += "    <td>{0}<br/>{1}<br/></td>\n".format(html_report.get_smt2_file(line),
-                                                                            html_report.get_log_file(line))
-            table += "    <td>{0}<br/>{1}</td>\n".format(html_report.get_tests_info(line), html_report.get_extra_info_from_log(line))
+            table += "    <td>{0}<br/>{1}<br/>{2}<br/>{3}<br/></td>\n".format(html_report.get_smt2_file(line),
+                                                            html_report.get_log_file(line, "log.txt"),
+                                                            html_report.get_log_file(line, "log_encoding.txt"),
+                                                            html_report.get_extra_info_from_log(line))
+            table += "    <td>{0}<br/>{1}</br>{2}</td>\n".format(html_report.create_hyperlinnk_to_test_file(line + '/' + os.path.basename(line) + '.t.sol'),
+                                                         html_report.get_log_file(line, "test_results.txt"),
+                                                        html_report.get_tests_info(line))
             table += "    <td>{0}</td>\n".format(html_report.get_coverage_data(line))
             table += "    <td>{0}</td>\n".format(str(html_report.get_time_consumed(line)) + ' seconds')
             table += "  </tr>\n"
@@ -155,8 +185,8 @@ class html_report:
             return "<font color=\"red\">{}</font>\n".format('no smt')
 
     @classmethod
-    def get_log_file(cls, dir):
-        log = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'log.txt']
+    def get_log_file(cls, dir, log_file_name):
+        log = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == log_file_name]
         if len(log) >= 1:
             return html_report.create_hyperlinnk_to_file(log[0])
         else:

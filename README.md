@@ -32,8 +32,14 @@ location of executable file and example of command
 #### run all tests
 `forge test`
 
-#### run specificied tests
+#### run specified test
 `forge test --match Loop*`
 
-#### run Python 
+#### run test generation for specified sol-file with Python 
 `python3 ./scripts/SolidityTestGen.py -i ./src/Loop_1.sol`
+
+#### run test generation for folder with sol-files with Python
+`python3 ./scripts/RunAll.py -i folder_path -o ../testgen_output`
+
+#### Report example:
+![img.png](img.png)

@@ -231,7 +231,9 @@ def update_file(file):
             signature_tmp.append(contract_name)
         elif "function" in l:
             out.append(l)
-            signature_tmp.append(get_fun_signature(l))
+            # skip private functions
+            if "internal" not in l.split():
+                signature_tmp.append(get_fun_signature(l))
         elif "pragma solidity" in l:
             print("pragma solidity is found")
         else:
@@ -297,7 +299,8 @@ def run_tg(file):
 def is_fun_supported(fun_signature):
     # currently only int formate is supported
     for f in fun_signature:
-        if f != "uint":
+        #if f != "uint":
+        if "uint" not in f:
             return False
     return True
 
@@ -349,6 +352,15 @@ def run_test(file, signature):
     new_name = SANDBOX_DIR + "/" + basename
     print("Run tests for: {} ".format(new_name))
     generate_stub(basename, signature)
+    # copy source file to "scr"
+    shutil.copyfile(file, "../src/" + basename)
+    #run command:  forge test --match name
+    command = ['forge', 'test', '--match', str(os.path.splitext(basename)[0])]
+    command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
+    os.remove("../src/" + basename)
+    shutil.move("../test/" + os.path.splitext(basename)[0] + ".t.sol",
+                SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
+
 
 
 def main(filename):
