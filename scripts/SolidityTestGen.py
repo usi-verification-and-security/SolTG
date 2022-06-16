@@ -26,7 +26,7 @@ def init():
         TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 60
+    TG_TIMEOUT = 600
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -200,6 +200,24 @@ def get_fun_signature(line):
     return out
 
 
+def is_in_contract_type(line):
+    tockens = line.split()
+    for e in ['interface', 'contract', 'library']:
+        if e in tockens:
+            return True
+    return False
+
+
+def get_contrac_type(line):
+    if 'interface' in line:
+        return 'interface'
+    if 'contract' in line:
+        return 'contract'
+    if 'library' in line:
+        return 'library'
+    return "NaN"
+
+
 def update_file(file):
     print("update file: {}".format(file))
     contract_name = ""
@@ -208,11 +226,13 @@ def update_file(file):
     signature = []
     signature_tmp = []
     out = []
+    class_types = ['interface', 'contract', 'library']
     for l in lines_to_check:
-        if l.startswith("//"):
+        if l.strip().startswith("//"):
             continue
-        if "contract" in l:
+        if is_in_contract_type(l):
             print("contract found")
+            contrac_type = get_contrac_type(l)
             if signature_tmp:
                 signature.append(signature_tmp)
                 signature_tmp = []
@@ -226,20 +246,21 @@ def update_file(file):
                     else:
                         contract_name = t
                     break
-                if t == "contract":
+                if is_in_contract_type(t):
                     next = True
-            signature_tmp.append(contract_name)
+            signature_tmp.append([contract_name, contrac_type])
         elif "function" in l:
             out.append(l)
             # skip private functions
-            if "internal" not in l.split():
+            if "internal" not in l.split() and contract_name:
                 signature_tmp.append(get_fun_signature(l))
         elif "pragma solidity" in l:
             print("pragma solidity is found")
         else:
             out.append(l)
 
-    signature.append(signature_tmp)
+    if signature_tmp:
+        signature.append(signature_tmp)
     logger(SANDBOX_DIR + "/log.txt", "File signature: \n" + str(signature))
     basename = os.path.basename(file)
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
@@ -314,24 +335,26 @@ def generate_stub(file_name, signature):
            "pragma solidity ^0.8.13;\n\n",
            "import \"forge-std/Test.sol\";\n",
            "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
-           f'contract {name_wo_extension}_Test is Test' + '{\n']
+           f'contract {name_wo_extension}_Test is Test' + ' {\n']
 
     # contracts declaration
     for i, c in enumerate(signature):
-        out.append("\t{} {};\n".format(c[0], "c" + str(i)))
+        if c[0][1] in ['contract', 'library']:  # skip interphases
+            out.append("\t{} {};\n".format(c[0][0], "c" + str(i)))
 
     # generate setUp function
     out.append("\n")
     out.append("\tfunction setUp() public {\n")
     for i, c in enumerate(signature):
-        out.append("\t\t{} = new {}();\n".format("c" + str(i), c[0]))
+        if c[0][1] in ['contract', 'library']: # skip interphases
+            out.append("\t\t{} = new {}();\n".format("c" + str(i), c[0][0]))
     out.append("\t}\n")
 
     # generate Tests : one test for each function for each contract
     index = 0
     out.append("\n")
     for i, c in enumerate(signature):
-        if len(c) > 1:
+        if len(c) > 1 and c[0][1] in ['contract', 'library']: # skip interphases
             for j, funcs in enumerate(c[1:]):
                 check = is_fun_supported(funcs[1:])
                 if check:

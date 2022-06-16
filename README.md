@@ -3,7 +3,16 @@
 Test generation for Solidity 
 
 ### Dependincies / Setup
-* Aeval TestGen (TDB: how to)
+* Aeval TestGen (https://github.com/izlatkin/aeval) 
+```
+git clone https://github.com/izlatkin/aeval
+cd aeval
+git checkout tg-nonlin
+mkdir build ; cd build
+cmake ../
+cmake --build .  && cmake /home/fmfsu/Dev/blockchain/aeval
+make
+```
 * SMT Encoder set up 
 ```
 git clone https://github.com/leonardoalt/cav_2022_artifact
@@ -43,3 +52,6 @@ location of executable file and example of command
 
 #### Report example:
 ![img.png](img.png)
+
+#### Generate a report:
+`python3 ./scripts/ReportBuilder.py -i testgen_dir`
