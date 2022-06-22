@@ -82,7 +82,7 @@ class html_report:
                              "Done with TG",
                              "array operation requires one sort parameter",
                              "ALL Branches are covered: DONE",
-                             "FOUND", 'unrolling sat', 'unrolling unsat']
+                             "FOUND", 'unrolling sat', 'unrolling unsat', 'WOW!']
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:

@@ -2,31 +2,34 @@ import argparse
 import os
 import random
 import shutil
-import glob
 import subprocess
 import time
 from datetime import datetime
 from sys import platform
+
+from SolParser import SolParser
 
 """ Init SetUp 
 """
 
 
 def init():
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT, FORGE_PATH
     # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
     if platform == "darwin":
         SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
         ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
         TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
+        FORGE_PATH = "/Users/ilyazlatkin/.cargo/bin/forge"
     if platform == "linux" or platform == "linux2":
         SOLCMC = "/home/fmfsu/Dev/blockchain/cav_2022_artifact"
         ADT_DIR = "/home/fmfsu/Dev/blockchain/adt_transform/target/debug/adt_transform"
         TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
+        FORGE_PATH = "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 600
+    TG_TIMEOUT = 100
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -187,6 +190,10 @@ def run_adt_transform(smt2_file, smt2_wo_adt):
 
 def get_fun_signature(line):
     start = line.index("function") + len("function")
+    if line.find(")") < 0:
+        # not supported case regression/types/array_aliasing_memory_1.sol,
+        # when function declared in multiple lines
+        return []
     end = line.index(")", start + 1)
     function_all = line[start:end + 1].strip()
     function_name = function_all[:function_all.index("(")]
@@ -227,9 +234,16 @@ def update_file(file):
     signature_tmp = []
     out = []
     class_types = ['interface', 'contract', 'library']
-    for l in lines_to_check:
-        if l.strip().startswith("//"):
+    for tmp_l in lines_to_check:
+        if tmp_l.strip().startswith("//"):
             continue
+
+        index_of_comments = tmp_l.find("//")
+        if index_of_comments > 1:
+            l = tmp_l[:index_of_comments]
+        else:
+            l = tmp_l
+
         if is_in_contract_type(l):
             print("contract found")
             contrac_type = get_contrac_type(l)
@@ -253,7 +267,9 @@ def update_file(file):
             out.append(l)
             # skip private functions
             if "internal" not in l.split() and contract_name:
-                signature_tmp.append(get_fun_signature(l))
+                r = get_fun_signature(l)
+                if r:
+                    signature_tmp.append(r)
         elif "pragma solidity" in l:
             print("pragma solidity is found")
         else:
@@ -371,15 +387,22 @@ def generate_stub(file_name, signature):
 
 
 def run_test(file, signature):
+    global  SANDBOX_DIR
     basename = os.path.basename(file)
     new_name = SANDBOX_DIR + "/" + basename
     print("Run tests for: {} ".format(new_name))
+    save = os.getcwd()
+    print(save)
     generate_stub(basename, signature)
     # copy source file to "scr"
     shutil.copyfile(file, "../src/" + basename)
     #run command:  forge test --match name
-    command = ['forge', 'test', '--match', str(os.path.splitext(basename)[0])]
+    command = [FORGE_PATH, 'test', '--match', str(os.path.splitext(basename)[0])]
+    SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
+    logger(SANDBOX_DIR + "/log.txt", "new signature" + str(signature))
+    os.chdir("../")
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
+    os.chdir(save)
     os.remove("../src/" + basename)
     shutil.move("../test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
@@ -389,7 +412,7 @@ def run_test(file, signature):
 def main(filename):
     start_time = time.time()
     init()
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT
+    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']
@@ -414,12 +437,14 @@ def main(filename):
 
     clean_dir(SANDBOX_DIR)
 
-    signature = move_for_encoding(file)
+    signature = move_for_encoding(file) # ToDo: remove signature after testing
+    signature = SolParser.get_signature(file)
+
     run_tg(file)
     run_test(file, signature)
 
     tt = time.time() - start_time
-    to_print_var = 'total time: {} seconds'.format(time.time() - start_time)
+    to_print_var = 'total time: {} seconds'.format(tt)
     print(to_print_var)
     logger(SANDBOX_DIR + '/log.txt', to_print_var)
 

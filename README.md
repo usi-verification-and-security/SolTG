@@ -24,6 +24,14 @@ COPY smtsolver_u.ts /home/solc-js/smtsolver.ts
 echo "RUN sed -i 's/let solverOutput;/console.log(query); let solverOutput;/g' /home/solc-js/smtsolver.ts" >> Dockerfile-solcmc
 docker build -f Dockerfile-solcmc . --rm -t leoalt/cav
 ```
+
+* Solidity Compiler ( > 8.x)
+```
+npm install -g solc
+sudo snap install solc
+```
+used for 
+`solc a.sol --ast-compact-json`
 example of command
 `./docker_solcmc examples smoke_safe.sol Smoke 30 z3`
 * ADT 
