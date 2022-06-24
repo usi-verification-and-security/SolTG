@@ -30,6 +30,19 @@ docker build -f Dockerfile-solcmc . --rm -t leoalt/cav
 npm install -g solc
 sudo snap install solc
 ```
+
+* Foundry (source https://github.com/foundry-rs/foundry)
+```
+git clone https://github.com/foundry-rs/foundry
+cd foundry
+cargo install --path ./cli --bins --locked --force
+cargo install --path ./anvil --locked --force
+```
+
+* LCov
+```brew install lcov```
+* GenHtml (part or lcov)
+
 used for 
 `solc a.sol --ast-compact-json`
 example of command

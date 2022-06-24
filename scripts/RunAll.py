@@ -123,6 +123,7 @@ def main_pipeline(files):
     for i, f in enumerate(sorted(files)):
         start_time = time.time()
         print("{:.2f}".format(100 * i / len(files)), "%", f)
+        print(i)
         basename = os.path.basename(f)
         dirname = os.path.dirname(f)
         print("basename: {}".format(basename))

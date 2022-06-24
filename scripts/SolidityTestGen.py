@@ -26,7 +26,7 @@ def init():
         SOLCMC = "/home/fmfsu/Dev/blockchain/cav_2022_artifact"
         ADT_DIR = "/home/fmfsu/Dev/blockchain/adt_transform/target/debug/adt_transform"
         TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
-        FORGE_PATH = "/home/fmfsu/.foundry/bin/forge"
+        FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
     TG_TIMEOUT = 100
@@ -397,15 +397,27 @@ def run_test(file, signature):
     # copy source file to "scr"
     shutil.copyfile(file, "../src/" + basename)
     #run command:  forge test --match name
-    command = [FORGE_PATH, 'test', '--match', str(os.path.splitext(basename)[0])]
     SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
     logger(SANDBOX_DIR + "/log.txt", "new signature" + str(signature))
     os.chdir("../")
+    command_executer([FORGE_PATH, 'clean'], 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
+    command = [FORGE_PATH, 'test', '--match', str(os.path.splitext(basename)[0])]
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
+    command = [FORGE_PATH, 'coverage', '--match', str(os.path.splitext(basename)[0]), '--report', 'lcov']
+    command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
+    command = [FORGE_PATH, 'coverage', '--match', str(os.path.splitext(basename)[0]), '--report', 'summary']
+    command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
+    #copy lcov file
+    if os.path.isfile("lcov.info"):
+        shutil.move("lcov.info", SANDBOX_DIR + "/lcov.info")
+        genhtml_report_command = ['genhtml', '--branch-coverage', '--output', SANDBOX_DIR + '/generated-coverage', SANDBOX_DIR + "/lcov.info"]
+        command_executer(genhtml_report_command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     os.chdir(save)
-    os.remove("../src/" + basename)
+    #os.remove("../src/" + basename)
+    clean_dir("../src")
     shutil.move("../test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
+    clean_dir("../test")
 
 
 

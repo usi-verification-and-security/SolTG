@@ -82,7 +82,7 @@ class html_report:
                              "Done with TG",
                              "array operation requires one sort parameter",
                              "ALL Branches are covered: DONE",
-                             "FOUND", 'unrolling sat', 'unrolling unsat', 'WOW!']
+                             "FOUND", 'unrolling sat', 'unrolling unsat']
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:
@@ -126,9 +126,44 @@ class html_report:
         else:
             return "No info"
 
+
     @classmethod
-    def get_coverage_data(cls, line):
-        return "No info"
+    def read_lcov_html_report(cls, file_name):
+        file = open(file_name, "r")
+        lines = file.readlines()
+        brench_lines = []
+        flag = False
+        i = 0
+        for line in lines:
+            if flag:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                i += 1
+            if 'Branches:' in line:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                flag = True
+            if i == 3:
+                break
+        return '{}<br/>\nHit: {}<br/>\nTotal: {}<br/>\nCoverage: {}\n'.format(brench_lines[0], brench_lines[1],
+                                                                              brench_lines[2], brench_lines[3])
+
+
+
+    @classmethod
+    def get_coverage_data(cls, dir):
+        sub_dirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) in 'generated-coverage']
+        if len(sub_dirs) != 1:
+            return "<font color=\"red\">{}</font>\n".format('no data')
+        else:
+            report_dir = [f.path for f in os.scandir(sub_dirs[0]) if f.is_dir()]
+            exclude = ['usr']
+            report_dir = [d for d in report_dir if os.path.basename(d) not in exclude]
+            if len(report_dir) != 1:
+                return "<font color=\"red\">{}</font>\n".format('no report')
+            else:
+                file_name = report_dir[0] + '/' + os.path.basename(dir) +'.sol.gcov.html'
+                out = "<a href=\"{0}\">{1} </a>\n".format(file_name, "coverage_c_file_TG") + '<br/>\n'
+                out += html_report.read_lcov_html_report(file_name) + '<br/>'
+                return out
 
 
     @classmethod
