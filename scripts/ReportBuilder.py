@@ -2,6 +2,8 @@ import argparse
 import os
 import re
 
+import xlsxwriter
+
 
 class html_report:
 
@@ -155,8 +157,7 @@ class html_report:
             return "<font color=\"red\">{}</font>\n".format('no data')
         else:
             report_dir = [f.path for f in os.scandir(sub_dirs[0]) if f.is_dir()]
-            exclude = ['usr']
-            report_dir = [d for d in report_dir if os.path.basename(d) not in exclude]
+            report_dir = [d for d in report_dir if os.path.basename(d)]
             if len(report_dir) != 1:
                 return "<font color=\"red\">{}</font>\n".format('no report')
             else:
@@ -164,6 +165,44 @@ class html_report:
                 out = "<a href=\"{0}\">{1} </a>\n".format(file_name, "coverage_c_file_TG") + '<br/>\n'
                 out += html_report.read_lcov_html_report(file_name) + '<br/>'
                 return out
+
+
+    @classmethod
+    def read_lcov_html_report_plane_text(cls, file_name):
+        file = open(file_name, "r")
+        lines = file.readlines()
+        brench_lines = []
+        flag = False
+        i = 0
+        for line in lines:
+            if flag:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                i += 1
+            if 'Branches:' in line:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                flag = True
+            if i == 3:
+                break
+        return brench_lines
+
+
+
+    @classmethod
+    def get_coverage_data_plane_text(cls, dir):
+        sub_dirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) in 'generated-coverage']
+        if len(sub_dirs) != 1:
+            return 'no data'
+        else:
+            report_dir = [f.path for f in os.scandir(sub_dirs[0]) if f.is_dir()]
+            report_dir = [d for d in report_dir if os.path.basename(d)]
+            if len(report_dir) != 1:
+                return 'no report'
+            else:
+                file_name = report_dir[0] + '/' + os.path.basename(dir) +'.sol.gcov.html'
+                out = html_report.read_lcov_html_report_plane_text(file_name)
+                return out
+
+
 
 
     @classmethod
@@ -258,6 +297,51 @@ class html_report:
         return True
 
 
+    @classmethod
+    def build_excel_report(self, dir):
+        # Create a workbook and add a worksheet.
+        workbook = xlsxwriter.Workbook(dir + '/1_report.xlsx')
+        worksheet = workbook.add_worksheet()
+
+        expenses = [['dir', 'filename', 'coverage',  'time', 'hit', 'total']]
+        subdirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f)]
+        out = []
+        for s in subdirs:
+            out += [(s, f.path) for f in os.scandir(s) if f.is_dir() and os.path.basename(f)]
+        for o in sorted(out):
+            (subd, line) = o
+            dir_name = os.path.basename(subd)
+            file_name = os.path.basename(line) + '.sol'
+            raw_data = html_report.get_coverage_data_plane_text(line)
+            coverage = ""
+            if raw_data != "no data" and raw_data != 'no report':
+                raw_data = [r.strip("\n") for r in raw_data]
+                coverage = raw_data[3].strip("%")
+                hit = float(raw_data[1])
+                total = float(raw_data[2])
+            else:
+                coverage = 0
+                hit = ''
+                total = ''
+
+            time = html_report.get_time_consumed(line)
+            expenses.append([dir_name, file_name, coverage, time, hit, total])
+
+        row = 0
+        col = 0
+
+        for dir_name, file_name, coverage, time, hit, total in expenses:
+            worksheet.write(row, col, dir_name)
+            worksheet.write(row, col + 1, file_name)
+            worksheet.write(row, col + 2, coverage)
+            worksheet.write(row, col + 3, time)
+            worksheet.write(row, col + 4, hit)
+            worksheet.write(row, col + 5, total)
+            row += 1
+
+        workbook.close()
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='python script for Report Builder')
@@ -274,4 +358,5 @@ if __name__ == '__main__':
         dir = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/testgen_output"
 
     html_report.buildReport(dir)
+    html_report.build_excel_report(dir)
 

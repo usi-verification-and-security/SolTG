@@ -185,6 +185,7 @@ def main():
         print(f)
     main_pipeline(files)
     html_report.buildReport(OUTPUTDIR)
+    html_report.build_excel_report(OUTPUTDIR)
     # html_report.buildReport_Excel_klee(SANDBOX_DIR)
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)

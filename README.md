@@ -22,7 +22,7 @@ remove "solverOutput = execSync ..." section
 add line to Dockerfile-solcmc: 
 COPY smtsolver_u.ts /home/solc-js/smtsolver.ts
 echo "RUN sed -i 's/let solverOutput;/console.log(query); let solverOutput;/g' /home/solc-js/smtsolver.ts" >> Dockerfile-solcmc
-docker build -f Dockerfile-solcmc . --rm -t leoalt/cav
+docker build -f Dockerfile-solcmc . --rm -t testgen/cav
 ```
 
 * Solidity Compiler ( > 8.x)

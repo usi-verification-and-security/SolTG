@@ -29,7 +29,7 @@ def init():
         FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 100
+    TG_TIMEOUT = 60
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -225,59 +225,25 @@ def get_contrac_type(line):
     return "NaN"
 
 
-def update_file(file):
+def update_file(file, name):
     print("update file: {}".format(file))
-    contract_name = ""
+    contract_name = name
     f = open(file, "r", encoding='ISO-8859-1')
     lines_to_check = f.readlines()
-    signature = []
-    signature_tmp = []
     out = []
-    class_types = ['interface', 'contract', 'library']
-    for tmp_l in lines_to_check:
+    for tmp_l in lines_to_check: # ToDo: check if needed later when Excel feature will be ready
         if tmp_l.strip().startswith("//"):
             continue
-
         index_of_comments = tmp_l.find("//")
         if index_of_comments > 1:
             l = tmp_l[:index_of_comments]
         else:
             l = tmp_l
-
-        if is_in_contract_type(l):
-            print("contract found")
-            contrac_type = get_contrac_type(l)
-            if signature_tmp:
-                signature.append(signature_tmp)
-                signature_tmp = []
-            tockens = l.split()
-            next = False
-            out.append(l)
-            for t in tockens:
-                if next:
-                    if t[-1] == '{':
-                        contract_name = t[:-1]
-                    else:
-                        contract_name = t
-                    break
-                if is_in_contract_type(t):
-                    next = True
-            signature_tmp.append([contract_name, contrac_type])
-        elif "function" in l:
-            out.append(l)
-            # skip private functions
-            if "internal" not in l.split() and contract_name:
-                r = get_fun_signature(l)
-                if r:
-                    signature_tmp.append(r)
-        elif "pragma solidity" in l:
+        if "pragma solidity" in l:
             print("pragma solidity is found")
         else:
             out.append(l)
 
-    if signature_tmp:
-        signature.append(signature_tmp)
-    logger(SANDBOX_DIR + "/log.txt", "File signature: \n" + str(signature))
     basename = os.path.basename(file)
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
                         "_updated" + os.path.splitext(basename)[1]
@@ -305,17 +271,16 @@ def update_file(file):
         f_smt.close()
         smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
         run_adt_transform(smt2_file, smt2_wo_adt)
-    return signature
 
 
-def move_for_encoding(file):
+def move_for_encoding(file, contract_name):
     print("move_for_encoding")
     # check tmp folder in SOLCMC/tmp
     tmp_dir = SOLCMC + "/tmp"
     prepare_dir(tmp_dir)
     new_file = tmp_dir + "/" + os.path.basename(file)
     shutil.copyfile(file, new_file)
-    return update_file(new_file)
+    update_file(new_file, contract_name)
 
 
 def run_tg(file):
@@ -420,6 +385,13 @@ def run_test(file, signature):
     clean_dir("../test")
 
 
+def find_contract_name(signature):
+    for s in signature:
+        if s[0][1] == 'contract':
+            return s[0][0]
+    return 0
+
+
 
 def main(filename):
     start_time = time.time()
@@ -449,11 +421,13 @@ def main(filename):
 
     clean_dir(SANDBOX_DIR)
 
-    signature = move_for_encoding(file) # ToDo: remove signature after testing
     signature = SolParser.get_signature(file)
+    contract_name = find_contract_name(signature)
+    if contract_name:
+        move_for_encoding(file, contract_name)
 
-    run_tg(file)
-    run_test(file, signature)
+        run_tg(file)
+        run_test(file, signature)
 
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)
