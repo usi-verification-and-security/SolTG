@@ -84,13 +84,16 @@ class html_report:
                              "Done with TG",
                              "array operation requires one sort parameter",
                              "ALL Branches are covered: DONE",
-                             "FOUND", 'unrolling sat', 'unrolling unsat']
+                             "FOUND", 'unrolling sat', 'unrolling unsat',
+                             "index_cycle_chc :",
+                             'RUST_BACKTRACE',
+                             "# TESTS:"]
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:
                 for line in lines:
                     if re.search(w, line):
-                        out += "<br/>" + "<font color=8B008B>{}</font>\n".format(w)
+                        out += "<br/>" + "<font color=8B008B>{}</font>\n".format(line)
                         break
         return out
 

@@ -15,7 +15,7 @@ class SolParser:
         if os.path.splitext(file)[1] == ".json":
             f = open(file, "r")
             data = json.load(f)
-            print(data)
+            #print(data)
             return data
         if os.path.splitext(file)[1] == ".sol":
             command = ['solc', file, '--ast-compact-json']
@@ -24,7 +24,7 @@ class SolParser:
                     stdout, stderr = process.communicate(input, timeout=20)
                     stdout_results = stdout.decode("utf-8")
                     stdout_results = stdout_results.replace("\'", "\"")
-                    print(stdout_results)
+                    #print(stdout_results)
                     next_line = False
                     index = 0
                     for i, line in enumerate(stdout_results.split('\n')):

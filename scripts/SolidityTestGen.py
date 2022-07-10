@@ -8,6 +8,7 @@ from datetime import datetime
 from sys import platform
 
 from SolParser import SolParser
+from TestWrapper import TestWrapper
 
 """ Init SetUp 
 """
@@ -88,6 +89,25 @@ def logger(file, content):
 
 def list_to_string(lst):
     return ' '.join([str(e) for e in lst])
+
+
+def command_executer_tg(command, timeout, log_file, output_file):
+    print("command: {}".format(str(command)))
+    # f = open(output_file, "a")
+    # f.flush()
+    # logger(log_file, list_to_string(command))
+    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
+        try:
+            stdout, stderr = process.communicate(input, timeout=timeout)
+            logger(log_file, str(stdout))
+            logger(log_file, str(stderr))
+        except Exception:
+            process.kill()
+            stdout, stderr = process.communicate()
+            logger(log_file, process.stdout.read())
+            logger(log_file, process.stderr.read())
+
+
 
 
 def command_executer(command, timeout, log_file, output_file):
@@ -236,7 +256,7 @@ def update_file(file, name):
             continue
         index_of_comments = tmp_l.find("//")
         if index_of_comments > 1:
-            l = tmp_l[:index_of_comments]
+            l = tmp_l[:index_of_comments] + "\n"
         else:
             l = tmp_l
         if "pragma solidity" in l:
@@ -284,6 +304,7 @@ def move_for_encoding(file, contract_name):
 
 
 def run_tg(file):
+    global SANDBOX_DIR
     basename = os.path.basename(file)
     smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
     new_smt_file_name = SANDBOX_DIR + "/" + smt_name
@@ -295,7 +316,11 @@ def run_tg(file):
     logger(log_file, to_print)
     command_tg = [TG_PATH, '--inv-mode', '0', '--no-term' '--keys', '4271,13242',
                   new_smt_file_name]
+    SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
+    save = os.getcwd()
+    os.chdir(SANDBOX_DIR)
     command_executer(command_tg, TG_TIMEOUT, log_file, log_file)
+    os.chdir(save)
 
 
 def is_fun_supported(fun_signature):
@@ -357,7 +382,7 @@ def run_test(file, signature):
     new_name = SANDBOX_DIR + "/" + basename
     print("Run tests for: {} ".format(new_name))
     save = os.getcwd()
-    print(save)
+    # get test from log
     generate_stub(basename, signature)
     # copy source file to "scr"
     shutil.copyfile(file, "../src/" + basename)
@@ -427,6 +452,11 @@ def main(filename):
         move_for_encoding(file, contract_name)
 
         run_tg(file)
+        tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
+        clean_tests = tw.wrap()
+        logger(SANDBOX_DIR + '/log.txt', clean_tests)
+        if type(clean_tests) is list:
+            logger(SANDBOX_DIR + '/log.txt', "# TESTS: {}".format(len(clean_tests)))
         run_test(file, signature)
 
     tt = time.time() - start_time
