@@ -63,6 +63,20 @@ class SolParser:
                     continue
                 f_name = fc['name']
                 f_kind = fc['kind']
+                if f_kind == 'constructor':
+                    parameters = fc['parameters']['parameters']
+                    constructor_parameters = []
+                    for p in parameters:
+                        identifier = p["typeDescriptions"]["typeIdentifier"]
+                        if is_supported_type(identifier):
+                            constructor_parameters.append(p['typeName']['name'])
+                            constructor_parameters.append(p['name'])
+                    # find [name, contractKind] and add constructor_parameters
+                    for el in for_one_contract:
+                        if len(el) == 2:
+                            if el[0] == name and el[1] == constructor_parameters:
+                                el += constructor_parameters
+                    continue
                 if f_kind == 'function' and fc['visibility'] == 'public':
                     tmp_f = [f_name]
                     print("kind: {} name: {}".format(f_kind, f_name))
@@ -74,6 +88,7 @@ class SolParser:
                             p_type = p['typeName']['name']
                             p_name = p['name']
                             tmp_f.append(p_type)
+                            tmp_f.append(p_name)
                         elif 'contract' in identifier:
                             tmp = p['typeDescriptions']['typeString']
                             if 'contract' in tmp:
@@ -88,6 +103,7 @@ class SolParser:
                                 p_type = p['typeName']['baseType']['name']
                                 p_name = p['name']
                                 tmp_f.append(p_type + "[]")
+                                tmp_f.append(p_name)
                             else:
                                 tmp_f = []  # case of array[][] not supported currently
                                 continue

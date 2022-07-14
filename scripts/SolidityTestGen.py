@@ -303,19 +303,37 @@ def move_for_encoding(file, contract_name):
     update_file(new_file, contract_name)
 
 
-def run_tg(file):
+def convert_for_tg(signature):
+    # formate contract_name,p1,p2,p2;function_name_1,p1,p2..pn
+    out = []
+    for c in signature:
+        index = 0
+        if 'contract' in c[0]:
+            contract_name = c[0][0]
+            var_names = [e for i, e in enumerate(c[0][2:]) if i % 2 == 1]
+            var_str = ','.join(var_names)
+            out.append("contract_{}:{}".format(contract_name, var_str))
+            index = 1
+        for f in c[index:]:
+            function_name = f[0]
+            var_names = [e for i, e in enumerate(f[1:]) if i % 2 == 1]
+            var_str = ','.join(var_names)
+            out.append("{}:{}".format(function_name, var_str))
+
+    return '^'.join(out)
+
+
+def run_tg(file, signature):
     global SANDBOX_DIR
     basename = os.path.basename(file)
     smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
     new_smt_file_name = SANDBOX_DIR + "/" + smt_name
     print("run TG with".format(new_smt_file_name))
     logger(SANDBOX_DIR + '/log.txt', "run TG with".format(new_smt_file_name))
-    to_print = "{} {} {}".format(TG_PATH, "--keys <keys_valus_to_be_define> ", new_smt_file_name)
-    print(to_print)
+    signature_for_tg = convert_for_tg(signature)
+    command_tg = [TG_PATH, "--keys", signature_for_tg, new_smt_file_name]
     log_file = SANDBOX_DIR + "/log.txt"
-    logger(log_file, to_print)
-    command_tg = [TG_PATH, '--inv-mode', '0', '--no-term' '--keys', '4271,13242',
-                  new_smt_file_name]
+    logger(log_file, ' '.join(command_tg))
     SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
     save = os.getcwd()
     os.chdir(SANDBOX_DIR)
@@ -383,7 +401,7 @@ def run_test(file, signature):
     print("Run tests for: {} ".format(new_name))
     save = os.getcwd()
     # get test from log
-    generate_stub(basename, signature)
+    # generate_stub(basename, signature)
     # copy source file to "scr"
     shutil.copyfile(file, "../src/" + basename)
     #run command:  forge test --match name
@@ -447,17 +465,25 @@ def main(filename):
     clean_dir(SANDBOX_DIR)
 
     signature = SolParser.get_signature(file)
+    logger(SANDBOX_DIR + '/log.txt', str(signature))
     contract_name = find_contract_name(signature)
     if contract_name:
         move_for_encoding(file, contract_name)
 
-        run_tg(file)
+        run_tg(file, signature)
         tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
         clean_tests = tw.wrap()
-        logger(SANDBOX_DIR + '/log.txt', clean_tests)
-        if type(clean_tests) is list:
-            logger(SANDBOX_DIR + '/log.txt', "# TESTS: {}".format(len(clean_tests)))
-        run_test(file, signature)
+        if clean_tests:
+            logger(SANDBOX_DIR + '/log.txt', clean_tests)
+            if type(clean_tests) is list:
+                logger(SANDBOX_DIR + '/log.txt', "# TESTS: {}".format(len(clean_tests)))
+            clean_tests_wo_duplicats = tw.remove_duplicates(clean_tests)
+            file_name = os.path.basename(file)
+            name_wo_extension = os.path.splitext(file_name)[0]
+            tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
+            run_test(file, signature)
+        else:
+            logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
 
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)
