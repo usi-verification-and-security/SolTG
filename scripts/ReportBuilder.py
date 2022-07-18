@@ -87,7 +87,7 @@ class html_report:
                              "FOUND", 'unrolling sat', 'unrolling unsat',
                              "index_cycle_chc :",
                              'RUST_BACKTRACE',
-                             "# TESTS:"]
+                             "# TESTS:", 'Multiple Calls Test']
             filein = open(log[0], "r", encoding='ISO-8859-1')
             lines = filein.readlines()
             for w in what_to_check:

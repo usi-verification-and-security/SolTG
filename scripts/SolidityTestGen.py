@@ -474,6 +474,9 @@ def main(filename):
         tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
         clean_tests = tw.wrap()
         if clean_tests:
+            if True in [len(t) > 1 for t in clean_tests]:
+                logger(SANDBOX_DIR + '/log.txt', "Multiple Calls Test")
+        if clean_tests:
             logger(SANDBOX_DIR + '/log.txt', clean_tests)
             if type(clean_tests) is list:
                 logger(SANDBOX_DIR + '/log.txt', "# TESTS: {}".format(len(clean_tests)))
