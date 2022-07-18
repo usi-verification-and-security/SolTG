@@ -74,7 +74,7 @@ class SolParser:
                     # find [name, contractKind] and add constructor_parameters
                     for el in for_one_contract:
                         if len(el) == 2:
-                            if el[0] == name and el[1] == constructor_parameters:
+                            if el[0] == name and el[1] == 'contract':
                                 el += constructor_parameters
                     continue
                 if f_kind == 'function' and fc['visibility'] == 'public':

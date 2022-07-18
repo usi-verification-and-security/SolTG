@@ -9,6 +9,7 @@ def is_fun_supported(fun_signature):
             return False
     return True
 
+
 class TestWrapper:
 
     def __init__(self, testgen_file, signature):
@@ -28,7 +29,7 @@ class TestWrapper:
                 a_test = []
             if inside_test:
                 if line:
-                    a_test.append(line)
+                    a_test.append(line.strip())
             if "NEW TEST" in line:
                 inside_test = True
         return raw_tests
@@ -91,21 +92,18 @@ class TestWrapper:
         test["order"] = order
         return test
 
-
     def wrap(self, log_file, signature):
         raw_tests = self.read(log_file)
         clean_tests = [self.get_values(test) for test in raw_tests]
         return clean_tests
 
-
     def wrap(self):
         if os.path.isfile(self.testgen_file):
             raw_tests = self.read(self.testgen_file)
-            clean_tests = [self.get_values(test) for test in raw_tests]
-            return clean_tests
+            # clean_tests = [self.get_values(test) for test in raw_tests]
+            return raw_tests
         else:
             return False
-
 
     def remove_duplicates(self, tests):
         out = []
@@ -116,7 +114,6 @@ class TestWrapper:
                 out.append(t)
         return out
 
-
     def generate_sol_test(self, clean_tests, file_name):
         name_wo_extension = os.path.splitext(file_name)[0]
         test_name = name_wo_extension + ".t.sol"
@@ -125,17 +122,16 @@ class TestWrapper:
 
         # generate header/import part
         header = ["//Generated Test by TG\n", "//{}\n".format(str(self.signature)),
-               "pragma solidity ^0.8.13;\n\n",
-               "import \"forge-std/Test.sol\";\n",
-               "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
-               f'contract {name_wo_extension}_Test is Test' + ' {\n']
+                  #"pragma solidity ^0.8.13;\n\n",
+                  "import \"forge-std/Test.sol\";\n",
+                  "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
+                  f'contract {name_wo_extension}_Test is Test' + ' {\n']
 
         fields = []
         setUp = []
         test_body = []
         for index, test in enumerate(clean_tests):
 
-            order = test["order"]
             # contracts declaration
             contract_var = "c" + str(index)
             type = self.signature[0][0][1]
@@ -149,30 +145,19 @@ class TestWrapper:
                 # ToDo: add check if constructor signature
                 setUp.append("\t\t{} = new {}();\n".format(contract_var, contract_name))
 
-            # generate Tests : one test for each function for each contract
-            for o in order[1:]:
+                # generate Tests : one test for each function for each contract
                 # find fun_signature
                 fun_signature = []
-                for s in self.signature[0][1:]: #ToDo add mutliple contracts
-                    if s[0] == o:
-                        fun_signature = s
-                        break
-                if not fun_signature: # "function not found case"
+                for s in self.signature[0][1:]:  # ToDo add mutliple contracts
+                    fun_signature = s
+                if not fun_signature:  # "function not found case"
                     continue
-                data_dict = test[o]
-                if len(data_dict.keys()) != len(fun_signature) - 1:
-                    print("Wrong function signature")
-                    continue
-                check = is_fun_supported(fun_signature[1:])
-                if check:
-                    # generate random content
-                    keys = list(data_dict.keys())
-                    content_list = [str(data_dict[k][0]) for k in keys]
-                    content = ','.join(content_list)
-                    test_body.append(f'\tfunction test_{name_wo_extension}_{index}() public ' + '{\n')
-                    test_body.append("\t\t{}.{}({});\n".format(contract_var, o, content))
-                    test_body.append("\t\tassertTrue(true);\n\t}\n")
-
+                # check = is_fun_supported(fun_signature[1:])
+                # if check:
+                test_body.append(f'\tfunction test_{name_wo_extension}_{index}() public ' + '{\n')
+                for call in test:
+                    test_body.append("\t\t{}.{};\n".format(contract_var, call))
+                test_body.append("\t\tassertTrue(true);\n\t}\n")
 
         out = header + fields + ["\tfunction setUp() public {\n"] + setUp + ["\t}\n"] \
               + test_body + ["}\n"]
@@ -184,10 +169,11 @@ class TestWrapper:
 
 
 if __name__ == '__main__':
-    #tw = TestWrapper("../sandbox/testgen.txt", [[['C', 'contract'], ['test', 'uint256', 'uint256']]])  # nested_if
-    tw = TestWrapper("../sandbox/testgen.txt", [[['C', 'contract'], ['simple_if', 'uint256']]])  # simple_if
+    tw = TestWrapper("../sandbox/testgen.txt",
+                     [[['C', 'contract'], ['test', 'uint256', 'a', 'uint256', 'b']]])  # nested_if
+    # tw = TestWrapper("../sandbox/testgen.txt", [[['C', 'contract'], ['simple_if', 'uint256']]])  # simple_if
     [print(e) for e in tw.wrap()]
-    cleaned = tw.remove_duplicates(tw.wrap())
-    tw.generate_sol_test(tw.wrap(), "simple_if")
-    #[print(e) for e in cleaned]
+    # cleaned = tw.remove_duplicates(tw.wrap())
+    tw.generate_sol_test(tw.wrap(), "nested_if")
+    # [print(e) for e in cleaned]
     # python script to generate Solidity Tests from Raw log and signature of Sol file

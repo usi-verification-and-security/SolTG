@@ -233,8 +233,9 @@ class html_report:
                                                             html_report.get_log_file(line, "log.txt"),
                                                             html_report.get_log_file(line, "log_encoding.txt"),
                                                             html_report.get_extra_info_from_log(line))
-            table += "    <td>{0}<br/>{1}</br>{2}</td>\n".format(html_report.create_hyperlinnk_to_test_file(line + '/' + os.path.basename(line) + '.t.sol'),
+            table += "    <td>{0}<br/>{1}<br/>{2}</br>{3}</td>\n".format(html_report.create_hyperlinnk_to_test_file(line + '/' + os.path.basename(line) + '.t.sol'),
                                                          html_report.get_log_file(line, "test_results.txt"),
+                                                        html_report.create_hyperlinnk_to_file(line + '/testgen.txt'),
                                                         html_report.get_tests_info(line))
             table += "    <td>{0}</td>\n".format(html_report.get_coverage_data(line))
             table += "    <td>{0}</td>\n".format(str(html_report.get_time_consumed(line)) + ' seconds')
