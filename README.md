@@ -1,6 +1,50 @@
 # solidity_testgen
 
-Test generation for Solidity 
+Test generation for Solidity in Foundry format  (https://github.com/foundry-rs/foundry)
+
+Example of Contract under Test:
+```
+contract C {
+
+    uint x;
+
+	function f(uint _x) public {}
+	function g(uint _x, uint _y) public {}
+	function w(uint _x) public {}
+
+
+	function i(uint _x) internal {}
+}
+```
+Expected results of Test Generation:
+```
+import "forge-std/Test.sol";
+import "../src/contract_under_test.sol";
+
+contract contract_under_test_Test is Test {
+	C c0, c1, c2, ... cN;
+
+	function setUp() public {
+		c0 = new C(); c1 = new C(); ... cN = new C();
+	}
+	function test_0() public {
+		c0.f();
+		c0.g();
+		....
+		c0.w();
+	}
+........
+    function test_n() public {
+		cN.g();
+		cN.w();
+		....
+		cN.w();
+	}
+}
+```
+### Architecture
+![img_2.png](img_2.png)
+
 
 ### Dependincies / Setup
 * Aeval TestGen (https://github.com/izlatkin/aeval) 
@@ -72,7 +116,7 @@ location of executable file and example of command
 `python3 ./scripts/RunAll.py -i folder_path -o ../testgen_output`
 
 #### Report example:
-![img.png](img.png)
+![img_3.png](img_3.png)
 
 #### Generate a report:
 `python3 ./scripts/ReportBuilder.py -i testgen_dir`
