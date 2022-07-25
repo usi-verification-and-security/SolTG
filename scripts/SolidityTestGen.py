@@ -18,6 +18,8 @@ def init():
     global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT, FORGE_PATH
     # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
+    tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    SANDBOX_DIR = tmp + "/sandbox"
     if platform == "darwin":
         SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
         ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
@@ -30,7 +32,7 @@ def init():
         FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 60
+    TG_TIMEOUT = 15
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -403,11 +405,13 @@ def run_test(file, signature):
     # get test from log
     # generate_stub(basename, signature)
     # copy source file to "scr"
-    shutil.copyfile(file, "../src/" + basename)
+    local_path = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    shutil.copyfile(file, local_path + "/src/" + basename)
     #run command:  forge test --match name
     SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
     logger(SANDBOX_DIR + "/log.txt", "new signature" + str(signature))
-    os.chdir("../")
+    #os.chdir("../")
+    os.chdir(local_path)
     command_executer([FORGE_PATH, 'clean'], 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     command = [FORGE_PATH, 'test', '--match', str(os.path.splitext(basename)[0])]
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
@@ -422,10 +426,10 @@ def run_test(file, signature):
         command_executer(genhtml_report_command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     os.chdir(save)
     #os.remove("../src/" + basename)
-    clean_dir("../src")
-    shutil.move("../test/" + os.path.splitext(basename)[0] + ".t.sol",
+    clean_dir(local_path + "/src")
+    shutil.move(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
-    clean_dir("../test")
+    clean_dir(local_path + "/test")
 
 
 def find_contract_name(signature):
@@ -452,6 +456,7 @@ def main(filename):
         if args.input_source is not None:
             if os.path.isfile(args.input_source):
                 file = args.input_source
+                file = os.path.abspath(file)
                 print('solidity input file was set to {}'.format(file))
             elif os.path.isdir(args.input_source):
                 print('TBD'.format(args.input_source))

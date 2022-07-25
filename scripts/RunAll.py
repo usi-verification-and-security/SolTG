@@ -13,7 +13,8 @@ from ReportBuilder import html_report
 
 def init():
     global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
-    SANDBOX_DIR = "../sandbox"
+    tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    SANDBOX_DIR = tmp + "/sandbox"
     OUTPUTDIR = "../testgen_output"
 
 
@@ -118,14 +119,16 @@ def command_executer(command, timeout, file):
 
 
 def main_pipeline(files):
+    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
     clean_dir(OUTPUTDIR)
     print("number of files: {}".format(len(files)))
     for i, f in enumerate(sorted(files)):
         start_time = time.time()
         print("{:.2f}".format(100 * i / len(files)), "%", f)
         print(i)
-        basename = os.path.basename(f)
-        dirname = os.path.dirname(f)
+        ff = os.path.abspath(f)
+        basename = os.path.basename(ff)
+        dirname = os.path.dirname(ff)
         print("basename: {}".format(basename))
         print("dirname: {}".format(dirname))
         base_dirname = os.path.basename(dirname)
