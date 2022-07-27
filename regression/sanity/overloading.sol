@@ -11,7 +11,7 @@ contract C {
 		assert(a >= 0);
 	}
 
-	function g(uint x, uint y) public {
+	function f(uint x, uint y) public {
 		if (x > y){
 			a = x;
 		}else{

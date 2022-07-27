@@ -243,7 +243,7 @@ class html_report:
             i += 1
         table += "</table>"
         # table = table.replace("../{}".format(dir), ".")
-        table = table.replace(dir, ".")
+        #table = table.replace(dir, ".")
         fileout.writelines(table)
         fileout.close()
 

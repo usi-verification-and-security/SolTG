@@ -1,6 +1,7 @@
 import argparse
 import os
 import random
+import re
 import shutil
 import subprocess
 import time
@@ -32,7 +33,7 @@ def init():
         FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
     TIMEOUT = 900
-    TG_TIMEOUT = 15
+    TG_TIMEOUT = 150
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -207,6 +208,13 @@ def run_adt_transform(smt2_file, smt2_wo_adt):
     os.chdir(SANDBOX_DIR)
     command = [ADT_DIR, smt2_file]  # , ">", smt2_wo_adt]
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
+    # check case: (const 0)  and performe:
+    # sed -i 's/(const 0)/((as const (Array Int Int)) 0)/' file
+    with open(smt2_wo_adt, "r") as sources:
+        lines = sources.readlines()
+    with open(smt2_wo_adt, "w") as sources:
+        for line in lines:
+            sources.write(re.sub(r'(const 0)', '(as const (Array Int Int)) 0', line))
     os.chdir(save)
 
 
