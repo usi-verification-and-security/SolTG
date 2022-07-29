@@ -45,6 +45,9 @@ contract contract_under_test_Test is Test {
 ### Architecture
 ![img_2.png](img_2.png)
 
+### Building Tests as CHCs-paths-tree
+![img_4.png](img_4.png)
+
 
 ### Dependincies / Setup
 * Aeval TestGen (https://github.com/izlatkin/aeval) 
