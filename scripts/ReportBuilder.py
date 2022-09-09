@@ -229,10 +229,11 @@ class html_report:
                 html_report.create_hyperlinnk_to_file(subd))
             table += "    <td>{0}<br/>\n".format(
                 html_report.create_hyperlinnk_to_file(line + '/' + os.path.basename(line) + '.sol'))
-            table += "    <td>{0}<br/>{1}<br/>{2}<br/>{3}<br/></td>\n".format(html_report.get_smt2_file(line),
+            table += "    <td>{0}<br/>{1}<br/>{2}<br/>{3}<br/>{4}<br/></td>\n".format(html_report.get_smt2_file(line),
                                                             html_report.get_log_file(line, "log.txt"),
                                                             html_report.get_log_file(line, "log_encoding.txt"),
-                                                            html_report.get_extra_info_from_log(line))
+                                                            html_report.get_extra_info_from_log(line),
+                                                            html_report.get_log_file(line, "imag.png"))
             table += "    <td>{0}<br/>{1}<br/>{2}</br>{3}</td>\n".format(html_report.create_hyperlinnk_to_test_file(line + '/' + os.path.basename(line) + '.t.sol'),
                                                          html_report.get_log_file(line, "test_results.txt"),
                                                         html_report.create_hyperlinnk_to_file(line + '/testgen.txt'),

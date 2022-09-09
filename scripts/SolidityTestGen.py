@@ -10,6 +10,7 @@ from sys import platform
 
 from SolParser import SolParser
 from TestWrapper import TestWrapper
+import Utils
 
 """ Init SetUp 
 """
@@ -500,6 +501,9 @@ def main(filename):
             run_test(file, signature)
         else:
             logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
+
+        # generate image
+        Utils.generate_plot(SANDBOX_DIR + '/log.txt', SANDBOX_DIR + '/imag.png')
 
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)
