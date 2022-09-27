@@ -10,7 +10,7 @@ def read_log(filename):
     for line in lines:
         if 'rq_t' in line:
             tmp = line.strip().split()
-            if len(tmp) >= 5:
+            if len(tmp) >= 6:
                 results.append(tmp[5])
     return results
 
@@ -30,7 +30,10 @@ def plot_ts(times, new_file_abs_path):
 def generate_plot(log_file, new_file_abs_path):
     times = read_log(log_file)
     print(times)
-    plot_ts([datetime.strptime(t, "%H:%M:%S") for t in times], new_file_abs_path)
+    try:
+        plot_ts([datetime.strptime(t, "%H:%M:%S") for t in times], new_file_abs_path)
+    except:
+        print("An exception plot_ts")
 
 
 if __name__ == '__main__':
