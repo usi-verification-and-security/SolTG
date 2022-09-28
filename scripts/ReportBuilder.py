@@ -74,6 +74,19 @@ class html_report:
                 out += "<br/><font color=red>{}</font> ".format(tmp[1])
         return out
 
+    def parse_fun(line):
+        tmp = line.split(';')
+        tmp_1 = tmp[0].split()
+        out = ''
+        if tmp_1[-2].isnumeric():
+            if int(tmp_1[-2]) > 0:
+               out += tmp_1[-2] + " " + tmp_1[-1]
+        tmp_2 = tmp[1].split()
+        if tmp_2[-2].isnumeric():
+            if int(tmp_2[-2]) > 0:
+                out += tmp[1]
+        return out
+
     @classmethod
     def get_extra_info_from_log(cls, dir):
         log = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'log.txt']
@@ -130,6 +143,32 @@ class html_report:
             return out
         else:
             return "No info"
+
+
+    @classmethod
+    def get_number_of_test(cls, dir):
+        test_results = [f.path for f in os.scandir(dir) if f.is_file() and os.path.basename(f) == 'test_results.txt']
+        out = 0
+        if len(test_results) >= 1:
+            filein = open(test_results[0], "r", encoding='ISO-8859-1')
+            lines = filein.readlines()
+            for line in lines:
+                if "Test result:" in line:
+                    tmp = cls.parse_fun(line).split()
+                    if len(tmp) > 1:
+                        out += int(tmp[0])
+            return out
+        else:
+            return 0
+
+
+    @classmethod
+    def get_number_of_line_in_original_sorse_file(cls, dir):
+        sol_file = dir + "/" + os.path.basename(dir) + ".sol"
+        if os.path.exists(sol_file):
+            return len(open(sol_file, "r").readlines())
+        else:
+            return 0
 
 
     @classmethod
@@ -205,6 +244,42 @@ class html_report:
                 out = html_report.read_lcov_html_report_plane_text(file_name)
                 return out
 
+
+    @classmethod
+    def read_lcov_html_report_plane_text_function_number(cls, file_name):
+        file = open(file_name, "r")
+        lines = file.readlines()
+        brench_lines = []
+        flag = False
+        i = 0
+
+        for line in lines:
+            if flag:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                i += 1
+            if 'Functions:' in line:
+                brench_lines.append(re.sub('<[^<]+?>', '', line))
+                flag = True
+            if i == 3:
+                break
+        return brench_lines
+
+
+    @classmethod
+    def get_function_number_plane_text(cls, dir):
+        sub_dirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) in 'generated-coverage']
+        if len(sub_dirs) != 1:
+            return (False, 'no data')
+        else:
+            report_dir = [f.path for f in os.scandir(sub_dirs[0]) if f.is_dir()]
+            exclude = ['usr']
+            report_dir = [d for d in report_dir if os.path.basename(d) not in exclude]
+            if len(report_dir) != 1:
+                return (False, 'no report')
+            else:
+                file_name = report_dir[0] + '/' + os.path.basename(dir) +'.sol.gcov.html'
+                out = html_report.read_lcov_html_report_plane_text_function_number(file_name)
+                return out
 
 
 
@@ -308,7 +383,7 @@ class html_report:
         workbook = xlsxwriter.Workbook(dir + '/1_report.xlsx')
         worksheet = workbook.add_worksheet()
 
-        expenses = [['dir', 'filename', 'coverage',  'time', 'hit', 'total']]
+        expenses = [['dir', 'filename', 'coverage',  'time', 'hit', 'total', '#fun_hit', '#fun_total', '# tests', '# lines']]
         subdirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f)]
         out = []
         for s in subdirs:
@@ -329,19 +404,35 @@ class html_report:
                 hit = ''
                 total = ''
 
+            fun_number = html_report.get_function_number_plane_text(line)
+            if fun_number != "no data" and raw_data != 'no report':
+                fun_number = [r.strip("\n") for r in fun_number]
+                test1 = fun_number[1]
+                test2 = fun_number[2]
+            else:
+                coverage_TG = 0
+                test1 = ''
+                test2 = ''
+
             time = html_report.get_time_consumed(line)
-            expenses.append([dir_name, file_name, coverage, time, hit, total])
+            number_of_tests = html_report.get_number_of_test(line)
+            number_of_line = html_report.get_number_of_line_in_original_sorse_file(line)
+            expenses.append([dir_name, file_name, coverage, time, hit, total, test1, test2, number_of_tests, number_of_line])
 
         row = 0
         col = 0
 
-        for dir_name, file_name, coverage, time, hit, total in expenses:
+        for dir_name, file_name, coverage, time, hit, total, fun_number_hit, fun_number_total, number_of_tests, number_of_line in expenses:
             worksheet.write(row, col, dir_name)
             worksheet.write(row, col + 1, file_name)
             worksheet.write(row, col + 2, coverage)
             worksheet.write(row, col + 3, time)
             worksheet.write(row, col + 4, hit)
             worksheet.write(row, col + 5, total)
+            worksheet.write(row, col + 6, fun_number_hit)
+            worksheet.write(row, col + 7, fun_number_total)
+            worksheet.write(row, col + 8, number_of_tests)
+            worksheet.write(row, col + 9, number_of_line)
             row += 1
 
         workbook.close()
@@ -361,6 +452,7 @@ if __name__ == '__main__':
             print('report dir set to {}'.format(dir))
     else:
         dir = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/testgen_output"
+        dir = "/Users/ilyazlatkin/PycharmProjects/results/blockchain/regression_sanity_2/testgen_output"
 
     html_report.buildReport(dir)
     html_report.build_excel_report(dir)
