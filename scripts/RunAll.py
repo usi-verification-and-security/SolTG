@@ -119,8 +119,9 @@ def command_executer(command, timeout, file):
 
 
 def main_pipeline(files):
-    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
-    clean_dir(OUTPUTDIR)
+    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN
+    if RERUN:
+        clean_dir(OUTPUTDIR)
     print("number of files: {}".format(len(files)))
     for i, f in enumerate(sorted(files)):
         start_time = time.time()
@@ -152,7 +153,7 @@ def main_pipeline(files):
 def main():
     start_time = time.time()
     init()
-    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
+    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN
     parser = argparse.ArgumentParser(description='python script to run Sol Test Generation for all files in dir')
     insourse = ['-i', '--input_source']
     kwsourse = {'type': str, 'help': 'Input .sol-file. or directory with .sol-files'}
@@ -162,8 +163,20 @@ def main():
 
     parser.add_argument(*insourse, **kwsourse)
     parser.add_argument(*outdir, **kwoutdir)
+    kwcov = {'type': bool, 'help': 'true - rerun / false - continue. Default: true.'}
+    parser.add_argument('--rerun', **kwcov)
 
     args = parser.parse_args()
+
+    RERUN = False
+    if args.rerun is not None:
+        if args.rerun == 'false':
+            RERUN = False
+        if args.rerun == 'true' or args.rerun == 'True':
+            RERUN = True
+
+    print(RERUN)
+
     files = []
     if args.input_source is not None:
         if os.path.isfile(args.input_source):
@@ -176,6 +189,18 @@ def main():
             files = sorted([os.path.join(dp, f) for dp, dn, filenames in os.walk(SOURCE_PATH)
                             for f in filenames if os.path.splitext(f)[1] == '.sol'
                             and os.path.splitext(f)[0] != "harness"])
+            if not RERUN: # if rerun flase => find all finished files in testgen_output (-o: dir)
+                destination = os.path.abspath(args.output_dir)
+                subdirs = [f.path for f in os.scandir(destination) if f.is_dir() and os.path.basename(f)]
+                al_run = []
+                for sd in subdirs:
+                    al_run += [f.path for f in os.scandir(sd) if f.is_dir() and os.path.basename(f)]
+                al_run = [os.path.basename(a) + ".sol" for a in al_run]
+                new_files = []
+                for f in files:
+                    if os.path.basename(f) not in al_run:
+                        new_files.append(f)
+                files = new_files # update all files and include only NOT fished file
         else:
             print('invalid input_source: {}'.format(args.input_source))
             exit(1)
