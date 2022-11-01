@@ -269,13 +269,13 @@ class html_report:
     def get_function_number_plane_text(cls, dir):
         sub_dirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) in 'generated-coverage']
         if len(sub_dirs) != 1:
-            return (False, 'no data')
+            return 'no data'
         else:
             report_dir = [f.path for f in os.scandir(sub_dirs[0]) if f.is_dir()]
             exclude = ['usr']
             report_dir = [d for d in report_dir if os.path.basename(d) not in exclude]
             if len(report_dir) != 1:
-                return (False, 'no report')
+                return 'no report'
             else:
                 file_name = report_dir[0] + '/' + os.path.basename(dir) +'.sol.gcov.html'
                 out = html_report.read_lcov_html_report_plane_text_function_number(file_name)
@@ -405,7 +405,7 @@ class html_report:
                 total = ''
 
             fun_number = html_report.get_function_number_plane_text(line)
-            if fun_number != "no data" and raw_data != 'no report':
+            if not isinstance(fun_number, (bool)) and fun_number != "no data" and raw_data != 'no report':
                 fun_number = [r.strip("\n") for r in fun_number]
                 test1 = fun_number[1]
                 test2 = fun_number[2]
@@ -452,7 +452,8 @@ if __name__ == '__main__':
             print('report dir set to {}'.format(dir))
     else:
         dir = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/testgen_output"
-        dir = "/Users/ilyazlatkin/PycharmProjects/results/blockchain/regression_sanity_2/testgen_output"
+        dir = "/Users/ilyazlatkin/Downloads/testgen_output"
+        #dir = "/Users/ilyazlatkin/PycharmProjects/results/blockchain/regression_sanity_2/testgen_output"
 
     html_report.buildReport(dir)
     html_report.build_excel_report(dir)

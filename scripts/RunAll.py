@@ -168,7 +168,7 @@ def main():
 
     args = parser.parse_args()
 
-    RERUN = False
+    RERUN = True
     if args.rerun is not None:
         if args.rerun == 'false':
             RERUN = False

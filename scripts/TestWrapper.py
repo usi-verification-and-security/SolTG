@@ -134,30 +134,53 @@ class TestWrapper:
         for index, test in enumerate(clean_tests):
 
             # contracts declaration
-            contract_var = "c" + str(index)
             type = self.signature[0][0][1]
-            contract_name = self.signature[0][0][0]
+            contract_names = [self.signature[i][0][0] for i,_ in enumerate(self.signature)]
+            #contract_var = "c" + str(index)
+            contract_vars = [c_name.lower() + str(index) for c_name in contract_names]
 
             if type in ['contract', 'library']:  # skip interphases
-                fields.append("\t{} {};\n".format(contract_name, contract_var))
+                for i, c_name in enumerate(contract_names):
+                    fields.append("\t{} {};\n".format(c_name, contract_vars[i]))
 
             # generate setUp function
             if type in ['contract', 'library']:  # skip interphases
                 # ToDo: add check if constructor signature
-                setUp.append("\t\t{} = new {}();\n".format(contract_var, contract_name))
+                init_part_of_test = [tt for tt in test if "contract_" in tt]
+                for tt in init_part_of_test:
+                    for i, c_name in enumerate(contract_names):
+                        if 'contract_{}'.format(c_name) not in tt:
+                            continue
+                        if tt == 'contract_{}()'.format(c_name) or 'contract' not in test[0]:
+                            constructor_args_values = '()'
+                        else:
+                            tmp = tt
+                            start = tmp.index('(')
+                            end = tmp.index(')')
+                            constructor_args_values = tmp[start:end + 1]
+                        tt.split('_')
+                        setUp.append("\t\t{} = new {}{};\n".format(contract_vars[i], c_name, constructor_args_values))
 
                 # generate Tests : one test for each function for each contract
                 # find fun_signature
-                fun_signature = []
-                for s in self.signature[0][1:]:  # ToDo add mutliple contracts
-                    fun_signature = s
-                if not fun_signature:  # "function not found case"
-                    continue
-                # check = is_fun_supported(fun_signature[1:])
-                # if check:
+                funcs_calls = [tt for tt in test if "contract_" not in tt]
                 test_body.append(f'\tfunction test_{name_wo_extension}_{index}() public ' + '{\n')
-                for call in test:
-                    test_body.append("\t\t{}.{};\n".format(contract_var, call))
+                for calls in funcs_calls:
+                    fun_signature = []
+                    c_index = 0
+                    f_name_tmp = calls[:calls.index('(')]
+                    for j, sg in enumerate(self.signature):
+                        for y in [tmp[0] for tmp in sg]:
+                            if f_name_tmp == y:
+                                c_index = j
+                                break
+                    for s in self.signature[c_index][1:]:  # ToDo add mutliple contracts
+                        fun_signature = s
+                    if not fun_signature:  # "function not found case"
+                        continue
+                    # check = is_fun_supported(fun_signature[1:])
+                    # if check:
+                    test_body.append("\t\t{}.{};\n".format(contract_vars[c_index], calls))
                 test_body.append("\t\tassertTrue(true);\n\t}\n")
 
         out = header + fields + ["\tfunction setUp() public {\n"] + setUp + ["\t}\n"] \
@@ -172,9 +195,14 @@ class TestWrapper:
 if __name__ == '__main__':
     tw = TestWrapper("../sandbox/testgen.txt",
                      [[['C', 'contract'], ['test', 'uint256', 'a', 'uint256', 'b']]])  # nested_if
+    tw = TestWrapper("../sandbox/testgen.txt",
+                     [[['C', 'contract', 'uint256', 'b'], ['f', 'uint256', 'x'], ['set_max', 'uint256', 'x', 'uint256', 'y']]])  # contract_1.sol
+    tw = TestWrapper("../sandbox/testgen.txt",
+                     [[['A', 'contract', 'uint256', 'a'], ['f']],
+                      [['B', 'contract', 'uint256', 'b'], ['f'], ['g']]])  # contract_3.sol
     # tw = TestWrapper("../sandbox/testgen.txt", [[['C', 'contract'], ['simple_if', 'uint256']]])  # simple_if
     [print(e) for e in tw.wrap()]
     # cleaned = tw.remove_duplicates(tw.wrap())
-    tw.generate_sol_test(tw.wrap(), "nested_if")
+    tw.generate_sol_test(tw.wrap(), "constructor_3")
     # [print(e) for e in cleaned]
     # python script to generate Solidity Tests from Raw log and signature of Sol file
