@@ -33,8 +33,8 @@ def init():
         TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
         FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
     DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
-    TIMEOUT = 900
-    TG_TIMEOUT = 150
+    TIMEOUT = 100
+    TG_TIMEOUT = 30
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -321,15 +321,17 @@ def convert_for_tg(signature):
         index = 0
         if 'contract' in c[0]:
             contract_name = c[0][0]
+            contract_id = c[0][2]
             var_names = [e for i, e in enumerate(c[0][2:]) if i % 2 == 1]
             var_str = ','.join(var_names)
-            out.append("contract_{}:{}".format(contract_name, var_str))
+            out.append("contract_{}_{}:{}".format(contract_name, contract_id, var_str))
             index = 1
         for f in c[index:]:
             function_name = f[0]
-            var_names = [e for i, e in enumerate(f[1:]) if i % 2 == 1]
+            function_id = f[1]
+            var_names = [e for i, e in enumerate(f[2:]) if i % 2 == 1]
             var_str = ','.join(var_names)
-            out.append("{}:{}".format(function_name, var_str))
+            out.append("{}__{}:{}".format(function_name, function_id, var_str))
 
     return '^'.join(out)
 
@@ -482,9 +484,10 @@ def main(filename):
     logger(SANDBOX_DIR + '/log.txt', str(signature))
     contract_name = find_contract_name(signature)
     if contract_name:
+        # ToDo: run tg for each contract
         move_for_encoding(file, contract_name)
-
-        run_tg(file, signature)
+        for s in signature:
+            run_tg(file, [s])
         tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
         clean_tests = tw.wrap()
         if clean_tests:
@@ -497,11 +500,12 @@ def main(filename):
             clean_tests_wo_duplicats = tw.remove_duplicates(clean_tests)
             file_name = os.path.basename(file)
             name_wo_extension = os.path.splitext(file_name)[0]
-            tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
-            run_test(file, signature)
+            # tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
+            # run_test(file, [s])
         else:
             logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
-
+        tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
+        run_test(file, signature)
         # generate image
         Utils.generate_plot(SANDBOX_DIR + '/log.txt', SANDBOX_DIR + '/imag.png')
 

@@ -180,7 +180,9 @@ class TestWrapper:
                         continue
                     # check = is_fun_supported(fun_signature[1:])
                     # if check:
-                    test_body.append("\t\t{}.{};\n".format(contract_vars[c_index], calls))
+                    f_name = calls.split('__')[0]
+                    ucall = f_name + calls[calls.index('('):]
+                    test_body.append("\t\t{}.{}; //{}\n".format(contract_vars[c_index], ucall, calls))
                 test_body.append("\t\tassertTrue(true);\n\t}\n")
 
         out = header + fields + ["\tfunction setUp() public {\n"] + setUp + ["\t}\n"] \

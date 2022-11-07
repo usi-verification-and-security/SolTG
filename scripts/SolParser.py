@@ -53,16 +53,18 @@ class SolParser:
                 continue
             for_one_contract = []
             name = n['name']
-            print("name: {}".format(name))
+            contract_id = n['id']
+            print("name: {} id: {}".format(name, contract_id))
             contractKind = n['contractKind']
             print("contractKind: {}".format(contractKind))
-            for_one_contract.append([name, contractKind])
+            for_one_contract.append([name, contractKind, contract_id])
             f_c = n['nodes']
             for fc in f_c:
                 if 'kind' not in fc:
                     continue
                 f_name = fc['name']
                 f_kind = fc['kind']
+                f_id = fc['id']
                 if f_kind == 'constructor':
                     parameters = fc['parameters']['parameters']
                     constructor_parameters = []
@@ -78,8 +80,8 @@ class SolParser:
                                 el += constructor_parameters
                     continue
                 if f_kind == 'function' and fc['visibility'] == 'public':
-                    tmp_f = [f_name]
-                    print("kind: {} name: {}".format(f_kind, f_name))
+                    tmp_f = [f_name, f_id]
+                    print("kind: {} name: {} id: {}".format(f_kind, f_name, f_id))
                     params = fc['parameters']['parameters']
                     print("# of parameters: {}".format(len(params)))
                     for p in params:

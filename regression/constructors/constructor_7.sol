@@ -1,7 +1,7 @@
 contract A {
 	uint public x;
 	constructor() { x = 0; }
-    function test() public virtual returns (uint) {
+    function f() public virtual returns (uint) {
 		if (x < 1){
 			x = x + 1;
 		}else{
@@ -18,7 +18,7 @@ contract B is A {
 //        a.test();
 	}
 
-	function f() public returns (uint) {
+	function f(uint _y) public returns (uint) {
 		if(x > 10){
 			x = x + 10;
 		}
