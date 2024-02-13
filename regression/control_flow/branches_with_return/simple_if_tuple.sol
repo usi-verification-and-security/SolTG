@@ -1,4 +1,4 @@
-contract C {
+contract Csi6 {
 
 	uint x;
 	uint y;

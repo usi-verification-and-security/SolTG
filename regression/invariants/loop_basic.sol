@@ -1,4 +1,4 @@
-contract Simple {
+contract Simplelb {
 	function f(uint x) public pure {
 		uint y;
 		require(x > 0);

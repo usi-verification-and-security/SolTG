@@ -1,10 +1,10 @@
-contract C {
+contract Cfc1 {
 
     uint a;
     uint b;
     uint c;
 
-	function test() public {
+	function f() public {
 		if (a == 0) {
 			if (b == 0) {
 				if (c == 0) {

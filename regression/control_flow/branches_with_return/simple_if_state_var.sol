@@ -1,4 +1,4 @@
-contract C {
+contract Csi3 {
 
 	uint x;
 

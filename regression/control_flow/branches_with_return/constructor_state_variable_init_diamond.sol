@@ -1,8 +1,8 @@
-contract A {
+contract Av3 {
 	int x;
 }
 
-contract B is A {
+contract Bv3 is Av3 {
 	int y;
 	constructor (int a) {
 		if (a >= 0) {
@@ -14,7 +14,7 @@ contract B is A {
 	}
 }
 
-contract C is A {
+contract Cv3 is Av3 {
 	int z;
 	constructor (int a) {
 		if (a >= 0) {
@@ -26,32 +26,32 @@ contract C is A {
 	}
 }
 
-contract D1 is B, C {
-	constructor() B(1) C(1) {
+contract D1v3 is Bv3, Cv3 {
+	constructor() Bv3(1) Cv3(1) {
 		assert(x == 0); // should hold
 		assert(x == 1); // should fail
 		assert(x == -1); // should fail
 	}
 }
 
-contract D2 is B, C {
-	constructor() B(1) C(-1) {
+contract D2v3 is Bv3, Cv3 {
+	constructor() Bv3(1) Cv3(-1) {
 		assert(x == 0); // should fail
 		assert(x == 1); // should fail
 		assert(x == -1); // should hold (constructor of C is executed AFTER constructor of B)
 	}
 }
 
-contract D3 is B, C {
-	constructor() B(-1) C(1) {
+contract D3v3 is Bv3, Cv3 {
+	constructor() Bv3(-1) Cv3(1) {
 		assert(x == 0); // should fail
 		assert(x == 1); // should hold
 		assert(x == -1); // should fail
 	}
 }
 
-contract D4 is B, C {
-	constructor() B(-1) C(-1) {
+contract D4v3 is Bv3, Cv3 {
+	constructor() Bv3(-1) Cv3(-1) {
 		assert(x == 0); // should fail
 		assert(x == 1); // should fail
 		assert(x == -1); // should hold (constructor of C is executed AFTER constructor of B)

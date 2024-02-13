@@ -1,4 +1,4 @@
-contract C {
+contract Cr4 {
 	uint c;
 	function add(uint x, uint y) internal returns (uint) {
 		c = 0xff;

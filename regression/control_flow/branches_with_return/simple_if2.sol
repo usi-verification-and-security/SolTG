@@ -1,6 +1,6 @@
-contract C {
+contract Csi1 {
 
-	function test(uint256 a) public pure {
+	function f(uint256 a) public pure {
 		assert(simple_if(a) == 1); // should fail for a == 0
 	}
 

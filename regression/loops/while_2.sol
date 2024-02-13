@@ -1,4 +1,4 @@
-contract C {
+contract Cwb7 {
 	function f(uint x) public pure {
 		x = 2;
 		while (x > 1) {

@@ -1,4 +1,4 @@
-contract C
+contract Cfb2
 {
 	function f(uint x, bool b) public pure {
 		for (; x < 10; ) {

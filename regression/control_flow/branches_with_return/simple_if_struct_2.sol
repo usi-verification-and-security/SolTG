@@ -1,4 +1,4 @@
-contract C {
+contract Csi5 {
 
 	struct S {
 		uint x;

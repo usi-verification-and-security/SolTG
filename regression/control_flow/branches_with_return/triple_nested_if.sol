@@ -1,10 +1,10 @@
-contract C {
+contract Csi7 {
 
     uint a;
     uint b;
     uint c;
 
-	function test() public view {
+	function f() public view {
 		if (a == 0) {
 			if (b == 0) {
 				if (c == 0) {

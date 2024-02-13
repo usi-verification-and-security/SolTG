@@ -1,20 +1,20 @@
-contract A {
+contract A9 {
    uint public x;
    constructor() { x = 0; }
-   function inc() public returns (uint) {
+   function inc9() public returns (uint) {
       x = 1;
       return x;
    }
 }
 
-contract B {
-   A a;
+contract B9 {
+   A9 a;
    constructor(){
-     a = new A();
+     a = new A9();
    }
 
    function f() public {
-     uint y = a.inc();
+     uint y = a.inc9();
      assert(y == 1);
    }
 

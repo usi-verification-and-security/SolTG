@@ -1,4 +1,4 @@
-contract C {
+contract Csma {
 	uint x;
 
 	function f() public {

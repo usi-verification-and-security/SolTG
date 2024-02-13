@@ -4,6 +4,9 @@ import os
 import subprocess
 
 
+# import docker
+
+
 def is_supported_type(identifier):
     not_supported = ['array', 'contract', 'enum', 'function_external', 'struct', 'userDefinedValue']
     return not True in [n in identifier for n in not_supported]
@@ -15,25 +18,51 @@ class SolParser:
         if os.path.splitext(file)[1] == ".json":
             f = open(file, "r")
             data = json.load(f)
-            #print(data)
+            # print(data)
             return data
         if os.path.splitext(file)[1] == ".sol":
-            command = ['solc', file, '--ast-compact-json']
+            command = ['forge', 'flatten', '--output', 'tmp.sol', file]
+            subprocess.run(command)
+            with open('tmp.sol', 'r') as f:
+                lines = f.readlines()
+            filtered_lines = [line for line in lines if
+                              not line.replace(" ", "").startswith('*') and not line.replace(" ", "").startswith('/**')]
+            with open('tmp.sol', 'w') as f:
+                f.writelines(filtered_lines)
+            print("FILTERED: ", len(filtered_lines))
+            print("NON FILTERED: ", len(lines))
+            command = ['solc', 'tmp.sol', '--ast-compact-json']
+            # command = ['docker', 'run', '-v', '/Users/konstantin.britikov/Documents/SMT/rand_proj/script:/script/', 'ethereum/solc:0.6.12', "/script/" + file.split("/")[-1], '--ast-compact-json']
+            print(command)
+            # exit(1)
             with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
                 try:
                     stdout, stderr = process.communicate(input, timeout=20)
+                    print("Error: ", stderr)
                     stdout_results = stdout.decode("utf-8")
                     stdout_results = stdout_results.replace("\'", "\"")
-                    #print(stdout_results)
+                    # print("Stdout results: ", stdout_results)
                     next_line = False
                     index = 0
+                    print(file)
+                    filename = file.split("/")[-1]
+                    # print("File: ", file)
                     for i, line in enumerate(stdout_results.split('\n')):
+                        print("Iterators: ", i, " : ", line)
                         if next_line:
                             break
-                        if file in line:
+                        if filename in line:
                             next_line = True
                             index = i
+                    split_arr = stdout_results.split('\n')
+
+                    # print("Splitted: ", split_arr)
+                    # print("Splitted len: ", len(split_arr))
                     cut_result = '\n'.join(stdout_results.split('\n')[index + 1:])
+                    cut_result = split_arr[-1]
+                    # print("Cut result: ", cut_result)
+                    # print("Index: ", index)
+                    # exit(1)
                     data = json.loads(cut_result)
                     # print(data)
                     return data
@@ -56,16 +85,37 @@ class SolParser:
             contract_id = n['id']
             print("name: {} id: {}".format(name, contract_id))
             contractKind = n['contractKind']
+            print("Abstract:", n['abstract'])
+            if contractKind != "contract" or n['abstract'] == 'True':
+                print("Parsing stopped")
+                continue
             print("contractKind: {}".format(contractKind))
-            for_one_contract.append([name, contractKind, contract_id])
+            p_type1 = 'state_type'
+            p_name1 = 'state'
+            p_type2 = 'uint'
+            p_name2 = 'msg.value'
+            p_type3 = 'address'
+            p_name3 = 'msg.sender'
+            for_one_contract.append([name, contractKind, contract_id, p_type1, p_name1, p_type2, p_name2, p_type3, p_name3])
+            print(for_one_contract)
             f_c = n['nodes']
+            # print("Node: ", f_c)
             for fc in f_c:
                 if 'kind' not in fc:
                     continue
                 f_name = fc['name']
                 f_kind = fc['kind']
                 f_id = fc['id']
+                f_mutability = fc['stateMutability']
+                print("Kind:", f_kind)
+                print("Name:", f_name)
+                print("Id:", f_id)
+                print("Mutability:", f_mutability)
+                if f_name == "deposit":
+                    print(fc)
                 if f_kind == 'constructor':
+                    print(f_name)
+                    print("Constructor: ", fc)
                     parameters = fc['parameters']['parameters']
                     constructor_parameters = []
                     for p in parameters:
@@ -73,17 +123,44 @@ class SolParser:
                         if is_supported_type(identifier):
                             constructor_parameters.append(p['typeName']['name'])
                             constructor_parameters.append(p['name'])
+                    print("Constructor parameters: ", constructor_parameters)
                     # find [name, contractKind] and add constructor_parameters
+                    print("For one con before: ", for_one_contract)
                     for el in for_one_contract:
-                        if len(el) == 2:
+                        if len(el) == 7:
                             if el[0] == name and el[1] == 'contract':
                                 el += constructor_parameters
+                    print("For one con after: ", for_one_contract)
                     continue
-                if f_kind == 'function' and fc['visibility'] == 'public':
+                elif (f_kind == 'function' or f_kind == 'fallback' or f_kind == 'receive') and (
+                        fc['visibility'] == 'public' or fc['visibility'] == 'external'):
                     tmp_f = [f_name, f_id]
+                    print("FUNCTION:")
                     print("kind: {} name: {} id: {}".format(f_kind, f_name, f_id))
                     params = fc['parameters']['parameters']
                     print("# of parameters: {}".format(len(params)))
+                    # if f_mutability == 'payable':
+                    #     identifier = 'msg'
+                    #     p_type = 'tx_type'
+                    #     p_name = 'tx'
+                    #     tmp_f.append(p_type)
+                    #     tmp_f.append(p_name)
+                    p_type = 'state_type'
+                    p_name = 'state'
+                    tmp_f.append(p_type)
+                    tmp_f.append(p_name)
+                    p_type = 'uint'
+                    p_name = 'msg.value'
+                    tmp_f.append(p_type)
+                    tmp_f.append(p_name)
+                    p_type = 'address'
+                    p_name = 'msg.sender'
+                    tmp_f.append(p_type)
+                    tmp_f.append(p_name)
+                    # p_type = 'uint'
+                    # p_name = 'balanceOf'
+                    # tmp_f.append(p_type)
+                    # tmp_f.append(p_name)
                     for p in params:
                         identifier = p["typeDescriptions"]["typeIdentifier"]
                         if is_supported_type(identifier):
@@ -113,7 +190,15 @@ class SolParser:
                         # print("name: {}".format(p_name))
                     if tmp_f:
                         for_one_contract.append(tmp_f)
+                elif f_kind == 'function' and (fc['visibility'] == 'private' or fc['visibility'] == 'internal'):
+                    continue
+                else:
+                    print("SOMETHING WEIRD")
+                    print(f_kind)
+                    print(fc['visibility'])
+                    exit(1)
             out.append(for_one_contract)
+        # exit(1)
         return out
 
     @classmethod

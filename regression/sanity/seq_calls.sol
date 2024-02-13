@@ -1,4 +1,4 @@
-contract C {
+contract Csc {
 
     uint a;
 

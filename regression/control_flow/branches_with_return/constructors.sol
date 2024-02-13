@@ -1,4 +1,4 @@
-contract B {
+contract Bcs {
 	int x;
 	constructor(int b) {
 		if (b > 0) {
@@ -13,8 +13,8 @@ contract B {
 	}
 }
 
-contract C is B {
-	constructor(int a) B(a) {
+contract Ccs is Bcs {
+	constructor(int a) Bcs(a) {
 		assert(a > 0 || x == 2); // should hold
 		assert(a <= 0 || x == 1); // should hold
 		assert(x == 3); // should fail

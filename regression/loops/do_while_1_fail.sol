@@ -1,4 +1,4 @@
-contract C
+contract Cdw1
 {
 	function f(uint x) public pure {
 		require(x < 100);

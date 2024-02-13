@@ -1,7 +1,7 @@
-contract A {
+contract A7 {
 	uint public x;
 	constructor() { x = 0; }
-    function f() public virtual returns (uint) {
+    function f7() public virtual returns (uint) {
 		if (x < 1){
 			x = x + 1;
 		}else{
@@ -11,14 +11,14 @@ contract A {
 	}
 }
 
-contract B is A {
-    A a;
-	constructor() A() {
+contract B7 is A7 {
+    A7 a;
+	constructor() A7() {
 //        a = new A();
 //        a.test();
 	}
 
-	function f(uint _y) public returns (uint) {
+	function f7(uint _y) public returns (uint) {
 		if(x > 10){
 			x = x + 10;
 		}
@@ -29,7 +29,7 @@ contract B is A {
 		return x;
 	}
 
-	function g() public returns (uint) {
+	function g7() public returns (uint) {
 		x = 42;
 		assert(x > 0);
 		return x;

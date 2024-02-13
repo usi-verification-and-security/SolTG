@@ -1,4 +1,4 @@
-contract Simple {
+contract Simpleln {
 	function f() public pure {
 		uint x = 10;
 		uint y;

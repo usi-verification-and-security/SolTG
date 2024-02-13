@@ -15,7 +15,7 @@ def init():
     global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
     tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
     SANDBOX_DIR = tmp + "/sandbox"
-    OUTPUTDIR = "../testgen_output"
+    OUTPUTDIR = tmp + "/test"
 
 
 def clean_dir(dir):
@@ -214,6 +214,8 @@ def main():
     main_pipeline(files)
     html_report.buildReport(OUTPUTDIR)
     html_report.build_excel_report(OUTPUTDIR)
+    clean_dir(SANDBOX_DIR)
+    os.rmdir(SANDBOX_DIR)
     # html_report.buildReport_Excel_klee(SANDBOX_DIR)
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)

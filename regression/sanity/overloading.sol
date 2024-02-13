@@ -1,4 +1,4 @@
-contract C {
+contract Co {
 
     uint a;
 

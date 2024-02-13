@@ -1,11 +1,11 @@
-contract A {
+contract Av1 {
 	int x;
 	constructor (int a) { x = a;}
 }
 
-contract B is A {
+contract Bv1 is Av1 {
 	int y;
-	constructor(int a) A(-a) {
+	constructor(int a) Av1(-a) {
 		if (a > 0) {
 			y = 2;
 			return;
@@ -17,15 +17,17 @@ contract B is A {
 	}
 }
 
-contract C is B {
-	constructor(int a) B(a) {
+contract Cv1 is Bv1 {
+	constructor(int a) Bv1(a) {
 		assert(y != 3); // should hold
 		assert(y == 4); // should fail
 		if (a > 0) {
+			y=2;
 			assert(x < 0 && y == 2); // should hold
 			assert(x < 0 && y == 4); // should fail
 		}
 		else {
+			y=4;
 			assert(x >= 0 && y == 4); // should hold
 			assert(x >= 0 && y == 2); // should fail
 			assert(x > 0); // should fail

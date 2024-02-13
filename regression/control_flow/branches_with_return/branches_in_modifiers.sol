@@ -1,4 +1,4 @@
-contract C {
+contract Ci1 {
 
 	uint x;
 
@@ -17,7 +17,7 @@ contract C {
 		_;
 	}
 
-	function test() check inc public {
+	function f() check inc public {
 	}
 }
 // ====

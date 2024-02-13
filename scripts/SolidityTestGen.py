@@ -17,24 +17,23 @@ import Utils
 
 
 def init():
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT, FORGE_PATH
+    global ADT_DIR, SOLCMC, CORE, TIMEOUT, SANDBOX_DIR, SOLVER_TYPE, TG_PATH, TG_TIMEOUT, FORGE_PATH
     # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
+    CORE = os.getcwd()
     tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
     SANDBOX_DIR = tmp + "/sandbox"
     if platform == "darwin":
-        SOLCMC = "/Users/ilyazlatkin/CLionProjects/cav_2022_artifact"
-        ADT_DIR = "/Users/ilyazlatkin/CLionProjects/adt_transform/target/debug/adt_transform"
-        TG_PATH = "/Users/ilyazlatkin/CLionProjects/aeval/cmake-build-debug/tools/nonlin/tgnonlin"
-        FORGE_PATH = "/Users/ilyazlatkin/.cargo/bin/forge"
+        SOLCMC = CORE + "/lib"
+        TG_PATH = CORE + "/lib/tgnonlin"
+        # TG_PATH = "/Users/konstantin.britikov/Documents/SMT/mas_fed/aeval/build/tools/nonlin/tgnonlin"
+        FORGE_PATH = "/Users/konstantin.britikov/.cargo/bin/forge"
     if platform == "linux" or platform == "linux2":
-        SOLCMC = "/home/fmfsu/Dev/blockchain/cav_2022_artifact"
-        ADT_DIR = "/home/fmfsu/Dev/blockchain/adt_transform/target/debug/adt_transform"
-        TG_PATH = "/home/fmfsu/Dev/blockchain/aeval/build/tools/nonlin/tgnonlin"
-        FORGE_PATH = "/home/fmfsu/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
-    DOCKER_SOLCMC = SOLCMC + "/docker_solcmc"
-    TIMEOUT = 100
-    TG_TIMEOUT = 30
+        SOLCMC = CORE + "/lib"
+        TG_PATH = CORE + "/lib/tgnonlin"
+        FORGE_PATH = "/Users/konstantin.britikov/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
+    TIMEOUT = 200
+    TG_TIMEOUT = 120
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -144,6 +143,7 @@ def command_executer(command, timeout, log_file, output_file):
 
 
 def command_executer_docker_solcmc(command, timeout, file):
+    # os.chdir(SANDBOX_DIR)
     print("command: {}".format(str(command)))
     logger(file, list_to_string(command))
     with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
@@ -196,27 +196,32 @@ def run_solcmc(updated_file_name, contract_name):
     os.chdir(SOLCMC)
     basename = os.path.basename(updated_file_name)
     smt_name = os.path.splitext(basename)[0] + '.smt2'
+    print("Running solcmc")
     command = ["./docker_solcmc_updated", "tmp", basename,
-               contract_name, str(10), SOLVER_TYPE]  # , '>', smt_name]
-    smt2_list = command_executer_docker_solcmc(command, TIMEOUT, "tmp/log.txt")
+                contract_name, str(10), SOLVER_TYPE]#, '>', smt_name]
+    smt2_list = command_executer_docker_solcmc(command, TIMEOUT, "log.txt")
+    print("Contract name:", basename)
+    # print("Output:", smt2_list)
+    if not smt2_list:
+        exit(1)
     os.chdir(save)
     return smt2_list
 
 
-def run_adt_transform(smt2_file, smt2_wo_adt):
-    print("run adt_transform script")
-    save = os.getcwd()
-    os.chdir(SANDBOX_DIR)
-    command = [ADT_DIR, smt2_file]  # , ">", smt2_wo_adt]
-    command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
-    # check case: (const 0)  and performe:
-    # sed -i 's/(const 0)/((as const (Array Int Int)) 0)/' file
-    with open(smt2_wo_adt, "r") as sources:
-        lines = sources.readlines()
-    with open(smt2_wo_adt, "w") as sources:
-        for line in lines:
-            sources.write(re.sub(r'(const 0)', '(as const (Array Int Int)) 0', line))
-    os.chdir(save)
+# def run_adt_transform(smt2_file, smt2_wo_adt):
+#     print("run adt_transform script")
+#     save = os.getcwd()
+#     os.chdir(SANDBOX_DIR)
+#     command = [ADT_DIR, smt2_file]  # , ">", smt2_wo_adt]
+#     command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
+#     # check case: (const 0)  and performe:
+#     # sed -i 's/(const 0)/((as const (Array Int Int)) 0)/' file
+#     with open(smt2_wo_adt, "r") as sources:
+#         lines = sources.readlines()
+#     with open(smt2_wo_adt, "w") as sources:
+#         for line in lines:
+#             sources.write(re.sub(r'(const 0)', '(as const (Array Int Int)) 0', line))
+#     os.chdir(save)
 
 
 def get_fun_signature(line):
@@ -263,7 +268,7 @@ def update_file(file, name):
     lines_to_check = f.readlines()
     out = []
     for tmp_l in lines_to_check: # ToDo: check if needed later when Excel feature will be ready
-        if tmp_l.strip().startswith("//"):
+        if tmp_l.strip().startswith("//") :
             continue
         index_of_comments = tmp_l.find("//")
         if index_of_comments > 1:
@@ -279,6 +284,7 @@ def update_file(file, name):
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
                         "_updated" + os.path.splitext(basename)[1]
     f_updated = open(updated_file_name, 'a')
+    print("New out:", out)
     f_updated.writelines(out)
     f_updated.close()
     f.close()
@@ -287,6 +293,11 @@ def update_file(file, name):
     smt2_list = run_solcmc(updated_file_name, contract_name)
     # move to sanbox
     source = SOLCMC + "/tmp"
+    for i in range(len(smt2_list)):
+        smt2_list[i] = smt2_list[i].replace("\\r", "")
+    # smt2_list = smt2_list.replace("", "\\r")
+    # print("Source:", source)
+    # print("SMT2 list:", smt2_list)
     destination = os.path.abspath(SANDBOX_DIR)
     allfiles = os.listdir(source)
     for e in allfiles:
@@ -296,12 +307,17 @@ def update_file(file, name):
             shutil.move(source + "/" + e, destination + "/" + e)
 
     if smt2_list:
-        smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".smt2"
+        print("Created smt2, will run adt transform")
+        smt2_file = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_updated" + ".smt2"
         f_smt = open(smt2_file, 'a')
         f_smt.writelines(smt2_list)
         f_smt.close()
-        smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
-        run_adt_transform(smt2_file, smt2_wo_adt)
+        clean_dir(SOLCMC + "/tmp")
+        os.rmdir(SOLCMC + "/tmp")
+        os.remove(SOLCMC + "/log.txt")
+        # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
+        # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_updated.smt2"
+        # run_adt_transform(smt2_file, smt2_wo_adt)
 
 
 def move_for_encoding(file, contract_name):
@@ -310,19 +326,23 @@ def move_for_encoding(file, contract_name):
     tmp_dir = SOLCMC + "/tmp"
     prepare_dir(tmp_dir)
     new_file = tmp_dir + "/" + os.path.basename(file)
-    shutil.copyfile(file, new_file)
+    shutil.copyfile('tmp.sol', new_file)
+    os.remove('tmp.sol')
     update_file(new_file, contract_name)
 
 
 def convert_for_tg(signature):
-    # formate contract_name,p1,p2,p2;function_name_1,p1,p2..pn
+    # format contract_name,p1,p2,p2;function_name_1,p1,p2..pn
     out = []
+    print("Signature:", signature)
     for c in signature:
         index = 0
         if 'contract' in c[0]:
+            print("Contract: ", c)
             contract_name = c[0][0]
             contract_id = c[0][2]
-            var_names = [e for i, e in enumerate(c[0][2:]) if i % 2 == 1]
+            var_names = [e for i, e in enumerate(c[0][3:]) if i % 2 == 1]
+            print("Vars: ", var_names)
             var_str = ','.join(var_names)
             out.append("contract_{}_{}:{}".format(contract_name, contract_id, var_str))
             index = 1
@@ -339,11 +359,13 @@ def convert_for_tg(signature):
 def run_tg(file, signature):
     global SANDBOX_DIR
     basename = os.path.basename(file)
-    smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
+    smt_name = os.path.splitext(basename)[0] + "_updated.smt2"
+    # smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
     new_smt_file_name = SANDBOX_DIR + "/" + smt_name
     print("run TG with".format(new_smt_file_name))
     logger(SANDBOX_DIR + '/log.txt', "run TG with".format(new_smt_file_name))
     signature_for_tg = convert_for_tg(signature)
+    print("TG: ", signature_for_tg)
     command_tg = [TG_PATH, "--keys", signature_for_tg, new_smt_file_name]
     log_file = SANDBOX_DIR + "/log.txt"
     logger(log_file, ' '.join(command_tg))
@@ -366,7 +388,7 @@ def is_fun_supported(fun_signature):
 def generate_stub(file_name, signature):
     name_wo_extension = os.path.splitext(file_name)[0]
     test_name = name_wo_extension + ".t.sol"
-    test_file_full_path = "../test/" + test_name
+    test_file_full_path = CORE + "/test/" + test_name
     test_file = open(test_file_full_path, 'w')
     out = ["//Generated Test by TG\n", "//{}\n".format(str(signature)),
            "pragma solidity ^0.8.13;\n\n",
@@ -417,7 +439,8 @@ def run_test(file, signature):
     # generate_stub(basename, signature)
     # copy source file to "scr"
     local_path = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
-    shutil.copyfile(file, local_path + "/src/" + basename)
+    print(local_path + "/src/" + basename)
+    # shutil.copyfile(file, local_path + "/src/" + basename)
     #run command:  forge test --match name
     SANDBOX_DIR = os.path.abspath(SANDBOX_DIR)
     logger(SANDBOX_DIR + "/log.txt", "new signature" + str(signature))
@@ -437,7 +460,7 @@ def run_test(file, signature):
         command_executer(genhtml_report_command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     os.chdir(save)
     #os.remove("../src/" + basename)
-    clean_dir(local_path + "/src")
+    # clean_dir(local_path + "/src")
     shutil.move(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
     clean_dir(local_path + "/test")
@@ -445,6 +468,7 @@ def run_test(file, signature):
 
 def find_contract_name(signature):
     for s in signature:
+        print("SSig:", s)
         if s[0][1] == 'contract':
             return s[0][0]
     return 0
@@ -454,7 +478,7 @@ def find_contract_name(signature):
 def main(filename):
     start_time = time.time()
     init()
-    global ADT_DIR, SOLCMC, DOCKER_SOLCMC, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH
+    global ADT_DIR, SOLCMC, CORE, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']
@@ -478,18 +502,26 @@ def main(filename):
     else:
         file = filename
 
-    clean_dir(SANDBOX_DIR)
 
+    prepare_dir(SANDBOX_DIR)
+    print("File: ", file)
+
+    print("Pre sig")
     signature = SolParser.get_signature(file)
     logger(SANDBOX_DIR + '/log.txt', str(signature))
     contract_name = find_contract_name(signature)
     if contract_name:
+        print("In if")
+        print("Initial sig: ", signature)
         # ToDo: run tg for each contract
         move_for_encoding(file, contract_name)
         for s in signature:
             run_tg(file, [s])
         tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
+        print(tw)
         clean_tests = tw.wrap()
+        print(clean_tests)
+        clean_tests_wo_duplicats = clean_tests
         if clean_tests:
             if True in [len(t) > 1 for t in clean_tests]:
                 logger(SANDBOX_DIR + '/log.txt', "Multiple Calls Test")
@@ -504,10 +536,13 @@ def main(filename):
             # run_test(file, [s])
         else:
             logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
-        tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
-        run_test(file, signature)
-        # generate image
-        Utils.generate_plot(SANDBOX_DIR + '/log.txt', SANDBOX_DIR + '/imag.png')
+        if(clean_tests_wo_duplicats):
+            print("THERE ARE TESTS")
+            prepare_dir(CORE + "/test")
+            tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
+            run_test(file, signature)
+            # generate image
+            Utils.generate_plot(SANDBOX_DIR + '/log.txt', SANDBOX_DIR + '/imag.png')
 
     tt = time.time() - start_time
     to_print_var = 'total time: {} seconds'.format(tt)

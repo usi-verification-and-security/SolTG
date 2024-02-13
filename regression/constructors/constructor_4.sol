@@ -1,4 +1,4 @@
-contract A {
+contract A4 {
 	uint public x;
 	constructor(uint) {}
 
@@ -8,11 +8,11 @@ contract A {
 	}
 }
 
-contract C is A {
-	constructor() A(f()) {
+contract C4 is A4 {
+	constructor() A4(f()) {
 		assert(x == 1);
 	}
-    function test(uint a) public returns (uint) {
+    function f(uint a) public returns (uint) {
 		x = x + 1;
         if(x > 1){
             x = a;
@@ -21,6 +21,7 @@ contract C is A {
             x = x + 10;
         }
         if(x > 1000){
+			assert(x>1000);
             x = 2000;
         }
 		return x;

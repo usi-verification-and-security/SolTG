@@ -1,4 +1,11 @@
 import os.path
+import random
+
+from eth_utils import to_checksum_address
+# from PyInstaller.utils.hooks import collect_submodules
+#
+# # The ``eth_hash.utils.load_backend`` function does a dynamic import.
+# hiddenimports = collect_submodules('eth_hash.backends')
 
 
 def is_fun_supported(fun_signature):
@@ -42,6 +49,8 @@ class TestWrapper:
             return 0
 
     def get_values(cls, raw_list):
+        print("List:")
+        print(raw_list)
         order = []
         test = {}
         for item in raw_list:
@@ -94,12 +103,14 @@ class TestWrapper:
 
     def wrap(self, log_file, signature):
         raw_tests = self.read(log_file)
+        print(raw_tests)
         clean_tests = [self.get_values(test) for test in raw_tests]
         return clean_tests
 
     def wrap(self):
         if os.path.isfile(self.testgen_file):
             raw_tests = self.read(self.testgen_file)
+            print(raw_tests)
             # clean_tests = [self.get_values(test) for test in raw_tests]
             return raw_tests
         else:
@@ -134,11 +145,13 @@ class TestWrapper:
         for index, test in enumerate(clean_tests):
 
             # contracts declaration
+            print("SELF SIGNATURE:", self.signature)
             type = self.signature[0][0][1]
             contract_names = [self.signature[i][0][0] for i,_ in enumerate(self.signature)]
             #contract_var = "c" + str(index)
             contract_vars = [c_name.lower() + str(index) for c_name in contract_names]
-
+            print("Cont names:", contract_names)
+            print("Cont vars:", contract_vars)
             if type in ['contract', 'library']:  # skip interphases
                 for i, c_name in enumerate(contract_names):
                     fields.append("\t{} {};\n".format(c_name, contract_vars[i]))
@@ -155,11 +168,46 @@ class TestWrapper:
                             constructor_args_values = '()'
                         else:
                             tmp = tt
-                            start = tmp.index('(')
-                            end = tmp.index(')')
+                            print("Tmp:", tmp)
+                            start = tmp.index('"') + 1
+                            end = len(tmp)-1
+                            open_count = 0
+                            close_count = 0
+                            constructor_signature = self.signature[0][0]
+                            print("Const sig:", constructor_signature)
+
                             constructor_args_values = tmp[start:end + 1]
+                            char = ''
+                            ind = 0
+                            for char in constructor_args_values:
+                                ind+=1
+                                if char == '"':
+                                    break
+
+                            balances = constructor_args_values[:ind + 1]
+                            print("Balances:", balances)
+                            constructor_args_values = constructor_args_values[ind + 1:]
+                            print("Constructor args:", constructor_args_values)
+
+                            value = 0
+                            if ',' in constructor_args_values:
+                                end = constructor_args_values.index(',')
+                                value = constructor_args_values[:end]
+                            else:
+                                end = constructor_args_values.index(')')-1
+                                value = constructor_args_values[:end+1]
+                            constructor_args_values = '(' + constructor_args_values[end + 1:]
+                            sender = 0
+                            if ',' in constructor_args_values:
+                                end = constructor_args_values.index(',')
+                                sender = constructor_args_values[:end]
+                            else:
+                                end = constructor_args_values.index(')')-1
+                                sender = constructor_args_values[:end+1]
+                            constructor_args_values = '(' + constructor_args_values[end + 1:]
                         tt.split('_')
                         setUp.append("\t\t{} = new {}{};\n".format(contract_vars[i], c_name, constructor_args_values))
+                        print("Set up:", setUp)
 
                 # generate Tests : one test for each function for each contract
                 # find fun_signature
@@ -174,14 +222,73 @@ class TestWrapper:
                             if f_name_tmp == y:
                                 c_index = j
                                 break
-                    for s in self.signature[c_index][1:]:  # ToDo add mutliple contracts
+                    for s in self.signature[c_index][1:]: # ToDo add mutliple contracts
                         fun_signature = s
                     if not fun_signature:  # "function not found case"
                         continue
                     # check = is_fun_supported(fun_signature[1:])
                     # if check:
                     f_name = calls.split('__')[0]
-                    ucall = f_name + calls[calls.index('('):]
+                    for s in self.signature[c_index][1:]:
+                        if f_name == s[0]:
+                            fun_signature = s
+                            break
+                    print("FUN SIG: ", fun_signature)
+                    args = calls[calls.index('"') + 1:]
+                    print("Bef Func Args:", args)
+                    char = ''
+                    ind = 0
+                    open_count = 0
+                    close_count = 0
+                    for char in args:
+                        ind += 1
+                        if char == '"':
+                            break
+
+                    balances = args[:ind + 1]
+                    print("Balances:", balances)
+                    args = args[ind + 1:]
+                    value = 0
+                    if ',' in args:
+                        end = args.index(',')
+                        value = args[:end]
+                    else:
+                        end = args.index(')') - 1
+                        value = args[:end + 1]
+                    params = args[end + 1:-1]
+                    # TODO: Handle structures!!!!
+                    params = params.split(',')
+                    sender = params[0]
+                    params = params[1:]
+                    sender = hex(int(sender))
+                    sender = to_checksum_address(sender.ljust(42, '0').upper()[2:])
+                    init_ch = 9
+                    index_p = 0
+                    while len(fun_signature) > init_ch:
+                        if(fun_signature[init_ch - 1] == 'address'):
+                            params[index_p] = hex(int(params[index_p]))
+                            print("OLD LEN: ", len(str(params[index_p])))
+                            params[index_p] = to_checksum_address(params[index_p].ljust(42, '0').upper()[2:])
+                            # params[index_p]= '0x' + params[index_p]
+                            print("NEW PARAMS: ", params[index_p])
+                        if(fun_signature[init_ch - 1] == 'string'):
+                            params[index_p] = params[index_p].split("=")[1]
+                        index_p+=1
+                        init_ch+=2
+                    args = '(' + ','.join(params) + ')'
+                    print("Function args:", args)
+                    print("Value:", value)
+                    print("Sender:", sender)
+                    ucall = f_name + args
+                    if(str(sender) == "0x0000000000000000000000000000000000000000"):
+                        sender = random.randint(1000000000, 100000000000000000000)
+                        sender = hex(int(sender))
+                        sender = to_checksum_address(sender.ljust(42, '0').upper()[2:])
+                    test_body.append("\t\tvm.prank("+sender+");\n")
+                    if(int(value) > 0):
+                        test_body.append("\t\tvm.deal("+sender+", " + str(value) +" wei );\n")
+                        ucall = f_name + "{ value: " + value + " wei }" + args
+                        print("Unique address!")
                     test_body.append("\t\t{}.{}; //{}\n".format(contract_vars[c_index], ucall, calls))
                 test_body.append("\t\tassertTrue(true);\n\t}\n")
 

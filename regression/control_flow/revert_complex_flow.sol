@@ -1,4 +1,4 @@
-contract C {
+contract Cr5 {
 	function f(bool b, uint a) pure public {
 		require(a <= 256);
 		if (b)

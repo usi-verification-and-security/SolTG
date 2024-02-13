@@ -1,4 +1,4 @@
-contract C {
+contract Ci2 {
 
 	uint x;
 
@@ -16,7 +16,7 @@ contract C {
 		x = x + 1;
 	}
 
-	function test() public {
+	function f() public {
 		if (x == 0) {
 			reset_if_overflow();
 			assert(x == 1); // should fail;

@@ -1,28 +1,28 @@
-contract A {
+contract A3 {
 	uint public x;
 	constructor(uint a) { x = a; }
-    function f() public virtual returns (uint) {
+    function f3() public virtual returns (uint) {
 		x = x + 1;
 		return x;
 	}
 }
 
-contract B is A {
-	constructor(uint b) A(b) {
+contract B3 is A3 {
+	constructor(uint b) A3(b) {
 	}
 
-	function f() public override returns (uint) {
-		if(x > 10){
+	function f3() public override returns (uint) {
+		if(x > 7){
 			x = x + 10;
 		}
-		if(x > 2){
+		if(x > 3){
 			x = x + 10;
 		}
 		x = x + 1;
 		return x;
 	}
 
-	function g() public returns (uint) {
+	function g3() public returns (uint) {
 		x = 42;
 		assert(x > 0);
 		return x;

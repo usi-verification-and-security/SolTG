@@ -1,4 +1,4 @@
-contract C
+contract Cwb2
 {
 	function f(uint x, bool b) public pure {
 		require(x < 10);

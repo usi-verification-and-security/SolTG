@@ -1,4 +1,4 @@
-contract c {
+contract cs1 {
 	uint x;
 	function f() internal returns (uint) {
 		x = x + 1;

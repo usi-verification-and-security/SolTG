@@ -1,4 +1,4 @@
-contract C {
+contract C5 {
      uint x;
 	constructor(uint a, uint b) {
 		if (b > a) {
@@ -11,7 +11,7 @@ contract C {
 		}
 	}
 
-    function f(uint _x) public {
+    function f5(uint _x) public {
         uint a = 3;
         if (x > 2) {
             a = 5;
@@ -20,7 +20,7 @@ contract C {
         assert(a >= 3);
     }
 
-    function g(uint _x, uint _y) public {
+    function g5(uint _x, uint _y) public {
         if (_x > _y) {
             x = _x;
         }else{

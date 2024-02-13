@@ -1,4 +1,4 @@
-contract C {
+contract C1 {
      uint x;
 	constructor(uint b) {
 		if (b > 0) {
@@ -12,7 +12,7 @@ contract C {
 		x = 3;
 	}
 
-    function f(uint _x) public {
+    function f1(uint _x) public {
         uint a = 3;
         if (x > 2) {
             a = 5;
@@ -21,7 +21,7 @@ contract C {
         assert(a >= 3);
     }
 
-    function set_max(uint _x, uint _y) public {
+    function set_max1(uint _x, uint _y) public {
         if(_x > _y){
             x = _x;
         }else{

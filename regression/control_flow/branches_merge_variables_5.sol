@@ -1,5 +1,5 @@
 // Variable is reset in both branches
-contract C {
+contract Cb7 {
     function f(uint x) public pure {
         uint a = 2;
         if (x > 10) {

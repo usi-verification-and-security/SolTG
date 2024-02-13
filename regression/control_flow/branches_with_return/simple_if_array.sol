@@ -1,4 +1,4 @@
-contract C {
+contract Csi2 {
 
 	uint[] a;
 

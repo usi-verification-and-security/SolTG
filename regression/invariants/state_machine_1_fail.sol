@@ -1,4 +1,4 @@
-contract C {
+contract Csm1 {
 	uint x;
 
 	function f() public {

@@ -1,4 +1,4 @@
-contract C {
+contract Cb4 {
     uint x;
     modifier m(uint z) {
 		uint y = 3;

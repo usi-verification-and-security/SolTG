@@ -1,8 +1,8 @@
-contract A {
+contract Av2 {
 	uint x = 1;
 }
 
-contract B is A {
+contract Bv2 is Av2 {
 	constructor(int a) {
 		if (a > 0) {
 			x = 2;
@@ -12,11 +12,11 @@ contract B is A {
 	}
 }
 
-abstract contract C is B {
+abstract contract Cv2 is Bv2 {
 }
 
-contract D is C {
-	constructor(int a) B(a) {
+contract Dv2 is Cv2 {
+	constructor(int a) Bv2(a) {
 		assert(a > 0 || x == 3); // should hold
 		assert(a <= 0 || x == 2); // should hold
 		assert(x == 1); // should fail

@@ -1,4 +1,4 @@
-contract C {
+contract Csi1 {
 
 
 	function simple_if(uint256 a) public pure returns (uint256 z) {

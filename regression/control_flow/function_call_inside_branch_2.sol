@@ -1,4 +1,4 @@
-contract C
+contract Cc2
 {
 	function f() public pure {
 		if (true) {

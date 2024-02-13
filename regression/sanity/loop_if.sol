@@ -1,4 +1,4 @@
-contract C {
+contract Cfc2 {
 
 	function loop_if(uint256 y, uint256 z) public pure returns (uint256 zz) {
 		uint256 x = 0;

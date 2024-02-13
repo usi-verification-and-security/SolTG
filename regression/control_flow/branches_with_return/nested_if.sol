@@ -1,6 +1,6 @@
-contract C {
+contract Cn {
 
-	function test(uint256 a, uint256 b) public pure {
+	function f(uint256 a, uint256 b) public pure {
 		assert(nested_if(a,b) != 42); // should hold
 		assert(nested_if(a,b) == 1);  // should fail
 	}

@@ -1,6 +1,6 @@
-contract C {
+contract Cri {
 
-	function test() public pure {
+	function f() public pure {
 		assert(branches(0) == 0);
 		assert(branches(1) == 42);
 	}

@@ -1,4 +1,4 @@
-contract C
+contract Cc6
 {
 	modifier m(address a) {
 		if (true) {

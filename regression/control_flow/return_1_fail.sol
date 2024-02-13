@@ -1,4 +1,4 @@
-contract C {
+contract Cr2 {
 	function add(uint x, uint y) internal pure returns (uint) {
 		if (y == 0)
 			return x;

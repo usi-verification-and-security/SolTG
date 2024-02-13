@@ -1,4 +1,4 @@
-contract C {
+contract Cfc3 {
 
 	function f1(uint256 a) public pure returns (uint256 z) {
 		if (a < 5) {
