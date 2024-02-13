@@ -12,3 +12,7 @@ docs/
 
 # Dotenv file
 .env
+
+# Idea env
+.idea
+scripts/__pycache__/*
