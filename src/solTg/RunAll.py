@@ -13,7 +13,7 @@ from ReportBuilder import html_report
 
 def init():
     global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR
-    tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
     SANDBOX_DIR = tmp + "/sandbox"
     OUTPUTDIR = tmp + "/test"
 

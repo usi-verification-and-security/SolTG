@@ -15,4 +15,7 @@ docs/
 
 # Idea env
 .idea
-scripts/__pycache__/*
+src/scripts/__pycache__/*
+
+# Deploy
+dist

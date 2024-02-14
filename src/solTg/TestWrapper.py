@@ -129,7 +129,7 @@ class TestWrapper:
         name_wo_extension = os.path.splitext(file_name)[0]
         test_name = name_wo_extension + ".t.sol"
         # test_file_full_path = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/test/" + test_name
-        test_file_full_path = str(os.path.dirname(os.path.realpath(__file__))) + "/../test/" + test_name
+        test_file_full_path = str(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))) + "/../test/" + test_name
         test_file = open(test_file_full_path, 'w')
 
         # generate header/import part

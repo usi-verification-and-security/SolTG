@@ -1,7 +1,6 @@
 import argparse
 import os
 import random
-import re
 import shutil
 import subprocess
 import time
@@ -21,17 +20,17 @@ def init():
     # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
     CORE = os.getcwd()
-    tmp = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
     SANDBOX_DIR = tmp + "/sandbox"
     if platform == "darwin":
         SOLCMC = CORE + "/lib"
         TG_PATH = CORE + "/lib/tgnonlin"
         # TG_PATH = "/Users/konstantin.britikov/Documents/SMT/mas_fed/aeval/build/tools/nonlin/tgnonlin"
-        FORGE_PATH = "/Users/konstantin.britikov/.cargo/bin/forge"
+        FORGE_PATH = "forge"
     if platform == "linux" or platform == "linux2":
         SOLCMC = CORE + "/lib"
         TG_PATH = CORE + "/lib/tgnonlin"
-        FORGE_PATH = "/Users/konstantin.britikov/.cargo/bin/forge" # "/home/fmfsu/.foundry/bin/forge"
+        FORGE_PATH = "forge" # "/home/fmfsu/.foundry/bin/forge"
     TIMEOUT = 200
     TG_TIMEOUT = 120
     SOLVER_TYPE = "z3"  # "eld" # "z3"
@@ -438,7 +437,7 @@ def run_test(file, signature):
     # get test from log
     # generate_stub(basename, signature)
     # copy source file to "scr"
-    local_path = os.path.dirname((os.path.dirname(os.path.realpath(__file__))))
+    local_path = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
     print(local_path + "/src/" + basename)
     # shutil.copyfile(file, local_path + "/src/" + basename)
     #run command:  forge test --match name
