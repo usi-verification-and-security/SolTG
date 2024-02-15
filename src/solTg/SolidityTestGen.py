@@ -29,7 +29,7 @@ def init():
         FORGE_PATH = "forge"
     if platform == "linux" or platform == "linux2":
         SOLCMC = CORE + "/lib"
-        TG_PATH = CORE + "/lib/tgnonlin"
+        TG_PATH = CORE + "/lib/tgnonlin_linux"
         FORGE_PATH = "forge" # "/home/fmfsu/.foundry/bin/forge"
     TIMEOUT = 200
     TG_TIMEOUT = 120
