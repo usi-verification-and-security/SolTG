@@ -32,16 +32,16 @@ contract  Math {
         }
     }
 
-//    /**
-//     * @dev Returns the average of two numbers. The result is rounded towards
-//     * zero.
-//     */
-//    function average(uint256 a, uint256 b) public pure returns (uint256) {
-//
-//        assert(((a & b) + (a ^ b) / 2)*2 == a+b);
-//        // (a + b) / 2 can overflow.
-//        return (a & b) + (a ^ b) / 2;
-//    }
+    /**
+     * @dev Returns the average of two numbers. The result is rounded towards
+     * zero.
+     */
+    function average(uint256 a, uint256 b) public pure returns (uint256) {
+
+        assert(((a & b) + (a ^ b) / 2)*2 == a+b);
+        // (a + b) / 2 can overflow.
+        return (a & b) + (a ^ b) / 2;
+    }
 
     /**
      * @dev Returns the ceiling of the division of two numbers.

@@ -13,6 +13,13 @@ docs/
 # Dotenv file
 .env
 
+
+# Additional bench
+test
+sandbox
+contracts
+utils
+
 # Idea env
 .idea
 src/scripts/__pycache__/*
