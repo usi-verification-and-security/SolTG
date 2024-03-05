@@ -45,9 +45,12 @@ contract contract_under_test_Test is Test {
 
 
 
-### Dependincies / Setup
+### Dependencies / Setup
 
 * [Docker](https://docs.docker.com/engine/install/)
+
+Also don't forget to get your user permission to interact with docker:
+https://stackoverflow.com/questions/48957195/how-to-fix-docker-got-permission-denied-issue
 
 * [Solidity Compiler](https://docs.soliditylang.org/en/latest/installing-solidity.html)
 
@@ -57,16 +60,47 @@ contract contract_under_test_Test is Test {
 
 * GenHtml (part or lcov)
 
-After dependencies are installed, you also need to install all of the package requirements, by calling
+After dependencies are installed, you can install the package by calling:
+
+```
+sudo pip3 install solTg
+```
+
+After this, solTg can be used from any directory, calling the command:
+
+```
+solTg -i <input file/directory with .sol files>
+```
+
+Or you can run it locally, it is needed to install all the package requirements first, by calling
 ```
 pip install -r requirements.txt
 ```
 
-### Architecture
-![img_2.png](img_2.png)
+[//]: # (### Architecture)
 
-### Building Tests as CHCs-paths-tree
-![img_4.png](img_4.png)
+[//]: # (![img_2.png]&#40;img_2.png&#41;)
+
+[//]: # ()
+[//]: # (### Building Tests as CHCs-paths-tree)
+
+[//]: # (![img_4.png]&#40;img_4.png&#41;)
+
+
+
+#### run test generation for specified sol-file with Python 
+`solTg -i ./src/Loop_1.sol`
+
+You can also give specific output dir:
+
+`solTg -i folder_path -o ../testgen_output`
+
+If project is to be run from the repo, call:
+
+`python3 ./solTg/RunAll.py -i <some file/dir>`
+
+
+Run forge project:
 
 #### build project
 `forge build`
@@ -77,14 +111,10 @@ pip install -r requirements.txt
 #### run specified test
 `forge test --match Loop*`
 
-#### run test generation for specified sol-file with Python 
-`python3 ./scripts/SolidityTestGen.py -i ./src/Loop_1.sol`
 
-#### run test generation for folder with sol-files with Python
-`python3 ./scripts/RunAll.py -i folder_path -o ../testgen_output`
+[//]: # (#### Report example:)
 
-#### Report example:
-![img_3.png](img_3.png)
+[//]: # (![img_3.png]&#40;img_3.png&#41;)
 
 #### Generate a report:
 `python3 ./scripts/ReportBuilder.py -i testgen_dir`

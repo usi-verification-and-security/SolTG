@@ -1,6 +1,7 @@
 # Compiler files
 cache/
 out/
+build
 
 # Ignores development broadcast logs
 !/broadcast
@@ -19,6 +20,7 @@ test
 sandbox
 contracts
 utils
+outs
 
 # Idea env
 .idea

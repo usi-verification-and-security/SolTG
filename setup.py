@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
 setup(
     name='solTg',
     python_requires='>3.5.2',
-    version='0.0.6',
+    version='0.1.0',
     packages=find_packages(),
     include_package_data=True,  # This tells setuptools to include files listed in MANIFEST.in
     author = "Konstantin Britikov",

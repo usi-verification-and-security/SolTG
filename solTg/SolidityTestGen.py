@@ -192,7 +192,6 @@ def command_executer_docker_solcmc(command, timeout, file):
 
 def run_solcmc(updated_file_name, contract_name):
     # ./docker_solcmc examples smoke_safe.sol Smoke 30 z3
-    save = os.getcwd()
     os.chdir(CORE)
     shutil.copy(SOLCMC + "run_solcmc", "./run_solcmc")
     shutil.copy(SOLCMC + "docker_solcmc_updated", "./docker_solcmc_updated")
@@ -206,7 +205,8 @@ def run_solcmc(updated_file_name, contract_name):
     print("Output:", smt2_list)
     if not smt2_list:
         exit(1)
-    os.chdir(save)
+    os.remove(CORE + "run_solcmc")
+    os.remove(CORE + "docker_solcmc_updated")
     return smt2_list
 
 
@@ -294,7 +294,7 @@ def update_file(file, name):
     print(contract_name)
     smt2_list = run_solcmc(updated_file_name, contract_name)
     # move to sanbox
-    source = SOLCMC + "/tmp"
+    source = CORE + "/tmp"
     for i in range(len(smt2_list)):
         smt2_list[i] = smt2_list[i].replace("\\r", "")
     # smt2_list = smt2_list.replace("", "\\r")
@@ -314,9 +314,9 @@ def update_file(file, name):
         f_smt = open(smt2_file, 'a')
         f_smt.writelines(smt2_list)
         f_smt.close()
-        clean_dir(SOLCMC + "/tmp")
-        os.rmdir(SOLCMC + "/tmp")
-        os.remove(SOLCMC + "/log.txt")
+        clean_dir(CORE + "/tmp")
+        os.rmdir(CORE + "/tmp")
+        os.remove(CORE + "/log.txt")
         # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
         # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_updated.smt2"
         # run_adt_transform(smt2_file, smt2_wo_adt)
@@ -440,7 +440,7 @@ def run_test(file, signature):
     # get test from log
     # generate_stub(basename, signature)
     # copy source file to "scr"
-    local_path = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
+    local_path = os.getcwd()
     print(local_path + "/src/" + basename)
     # shutil.copyfile(file, local_path + "/src/" + basename)
     #run command:  forge test --match name
