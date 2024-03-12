@@ -197,7 +197,8 @@ class SolParser:
                     print(f_kind)
                     print(fc['visibility'])
                     exit(1)
-            out.append(for_one_contract)
+            if len(for_one_contract) > 1:
+                out.append(for_one_contract)
         # exit(1)
         return out
 

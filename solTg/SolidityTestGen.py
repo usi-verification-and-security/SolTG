@@ -205,7 +205,7 @@ def run_solcmc(updated_file_name, contract_name):
     print("Contract name:", basename)
     print("Output:", smt2_list)
     if not smt2_list:
-        exit(1)
+        return "F"
     os.remove(CORE + "run_solcmc")
     os.remove(CORE + "docker_solcmc_updated")
     return smt2_list
@@ -269,6 +269,8 @@ def update_file(file, name):
     contract_name = name
     f = open(file, "r", encoding='ISO-8859-1')
     lines_to_check = f.readlines()
+    addAssert = True
+    functionRead = False
     out = []
     for tmp_l in lines_to_check: # ToDo: check if needed later when Excel feature will be ready
         if tmp_l.strip().startswith("//") :
@@ -281,7 +283,14 @@ def update_file(file, name):
         if "pragma solidity" in l:
             print("pragma solidity is found")
         else:
+            if addAssert and functionRead and ("{" in out[-1]) and not ("}" in out[-1]):
+                out.append("\t\tassert(true);\n")
+                addAssert = False
+                functionRead = False
             out.append(l)
+            if "function" in l:
+                functionRead = True
+
 
     basename = os.path.basename(file)
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
@@ -295,6 +304,9 @@ def update_file(file, name):
     print(contract_name)
     smt2_list = run_solcmc(updated_file_name, contract_name)
     # move to sanbox
+    if smt2_list == "F":
+        print("ERROR WAS ENCOUNTERED! IMPOSSBLE TO PRODUCE THE CHC ENCODING(POSSIBLY DUE TO THE LACK OF ASSERTS)!")
+        return False
     source = CORE + "/tmp"
     for i in range(len(smt2_list)):
         smt2_list[i] = smt2_list[i].replace("\\r", "")
@@ -321,6 +333,7 @@ def update_file(file, name):
         # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
         # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_updated.smt2"
         # run_adt_transform(smt2_file, smt2_wo_adt)
+    return True
 
 
 def move_for_encoding(file, contract_name):
@@ -331,7 +344,9 @@ def move_for_encoding(file, contract_name):
     new_file = tmp_dir + "/" + os.path.basename(file)
     shutil.copyfile('tmp.sol', new_file)
     os.remove('tmp.sol')
-    update_file(new_file, contract_name)
+    if update_file(new_file, contract_name):
+        return True
+    return False
 
 
 def convert_for_tg(signature):
@@ -517,11 +532,11 @@ def main(filename):
         print("In if")
         print("Initial sig: ", signature)
         # ToDo: run tg for each contract
-        move_for_encoding(file, contract_name)
+        if not move_for_encoding(file, contract_name):
+            return
         for s in signature:
             run_tg(file, [s])
         tw = TestWrapper(SANDBOX_DIR + "/testgen.txt", signature)
-        print(tw)
         clean_tests = tw.wrap()
         print(clean_tests)
         clean_tests_wo_duplicats = clean_tests
