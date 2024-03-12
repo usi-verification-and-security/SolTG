@@ -20,14 +20,15 @@ def init():
     # Dockerfile-solcmc
     SANDBOX_DIR = "../sandbox"
     CORE = os.getcwd() + '/'
-    tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
     SANDBOX_DIR = CORE + "/sandbox"
     if platform == "darwin":
+        tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
         SOLCMC = tmp + "/deps/"
         TG_PATH = tmp + "/deps/tgnonlin"
         # TG_PATH = "/Users/konstantin.britikov/Documents/SMT/mas_fed/aeval/build/tools/nonlin/tgnonlin"
         FORGE_PATH = "forge"
     if platform == "linux" or platform == "linux2":
+        tmp = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))))
         SOLCMC = tmp + "/deps/"
         TG_PATH = tmp + "/deps/tgnonlin_linux"
         FORGE_PATH = "forge" # "/home/fmfsu/.foundry/bin/forge"
@@ -465,7 +466,7 @@ def run_test(file, signature):
     # clean_dir(local_path + "/src")
     shutil.move(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
-    clean_dir(local_path + "/test")
+    # clean_dir(local_path + "/test")
 
 
 def find_contract_name(signature):
@@ -540,7 +541,7 @@ def main(filename):
             logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
         if(clean_tests_wo_duplicats):
             print("THERE ARE TESTS")
-            prepare_dir(CORE + "/test")
+            # prepare_dir(CORE + "/test")
             tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
             run_test(file, signature)
             # generate image

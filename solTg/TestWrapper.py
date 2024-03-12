@@ -157,6 +157,7 @@ class TestWrapper:
                     fields.append("\t{} {};\n".format(c_name, contract_vars[i]))
 
             # generate setUp function
+            c_name = ""
             if type in ['contract', 'library']:  # skip interphases
                 # ToDo: add check if constructor signature
                 init_part_of_test = [tt for tt in test if "contract_" in tt]
@@ -208,6 +209,7 @@ class TestWrapper:
                         tt.split('_')
                         setUp.append("\t\t{} = new {}{};\n".format(contract_vars[i], c_name, constructor_args_values))
                         print("Set up:", setUp)
+                        break
 
                 # generate Tests : one test for each function for each contract
                 # find fun_signature
@@ -217,9 +219,11 @@ class TestWrapper:
                     fun_signature = []
                     c_index = 0
                     f_name_tmp = calls[:calls.index('(')]
+                    print("Name:", f_name_tmp)
                     for j, sg in enumerate(self.signature):
                         for y in [tmp[0] for tmp in sg]:
-                            if f_name_tmp == y:
+                            print("Y:", y)
+                            if c_name in y:
                                 c_index = j
                                 break
                     for s in self.signature[c_index][1:]: # ToDo add mutliple contracts
