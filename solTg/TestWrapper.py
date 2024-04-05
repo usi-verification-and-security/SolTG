@@ -294,7 +294,7 @@ class TestWrapper:
                         ucall = f_name + "{ value: " + value + " wei }" + args
                         print("Unique address!")
                     test_body.append("\t\t{}.{}; //{}\n".format(contract_vars[c_index], ucall, calls))
-                test_body.append("\t\tassertTrue(true);\n\t}\n")
+                test_body.append("\t}\n")
 
         out = header + fields + ["\tfunction setUp() public {\n"] + setUp + ["\t}\n"] \
               + test_body + ["}\n"]

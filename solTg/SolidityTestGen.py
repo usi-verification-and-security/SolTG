@@ -283,10 +283,10 @@ def update_file(file, name):
         if "pragma solidity" in l:
             print("pragma solidity is found")
         else:
-            if addAssert and functionRead and ("{" in out[-1]) and not ("}" in out[-1]):
-                out.append("\t\tassert(true);\n")
-                addAssert = False
-                functionRead = False
+            # if addAssert and functionRead and ("{" in out[-1]) and not ("}" in out[-1]):
+            #     out.append("\t\tassert(true);\n")
+            #     addAssert = False
+            #     functionRead = False
             out.append(l)
             if "function" in l:
                 functionRead = True
