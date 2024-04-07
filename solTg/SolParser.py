@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+import shutil
 import subprocess
 
 
@@ -23,8 +24,14 @@ class SolParser:
         if os.path.splitext(file)[1] == ".sol":
             command = ['forge', 'flatten', '--output', 'tmp.sol', file]
             subprocess.run(command)
+            file_exists = os.path.exists('tmp.sol')
+
+            if not file_exists:
+                shutil.copyfile(file, './tmp.sol')
+
             with open('tmp.sol', 'r') as f:
                 lines = f.readlines()
+
             filtered_lines = [line for line in lines if
                               not line.replace(" ", "").startswith('*') and not line.replace(" ", "").startswith('/**') and not line.replace(" ", "").startswith('/*')]
             with open('tmp.sol', 'w') as f:
