@@ -120,7 +120,7 @@ def command_executer(command, timeout, file):
 
 
 def main_pipeline(files):
-    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN
+    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN, TIMEOUT
     if RERUN:
         clean_dir(OUTPUTDIR)
     print("number of files: {}".format(len(files)))
@@ -138,7 +138,7 @@ def main_pipeline(files):
         print("base_dirname: {}".format(base_dirname))
         print("dir_dirname: {}".format(dir_dirname))
         # Step 1: run SolidityTestGen.py -i f
-        SolidityTestGen.main(f)
+        SolidityTestGen.main(f,  TIMEOUT)
         # Step 2: mkdir: OUTPUTDIR + "/" + base_dirname
         new_sub_dir = OUTPUTDIR + "/" + base_dirname
         if not os.path.exists(new_sub_dir):
@@ -154,7 +154,8 @@ def main_pipeline(files):
 def main():
     start_time = time.time()
     init()
-    global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN
+    global SOURCE_PATH, SANDBOX_DIR, TIMEOUT, OUTPUTDIR, RERUN
+    TIMEOUT = 120
     parser = argparse.ArgumentParser(description='python script to run Sol Test Generation for all files in dir')
     insourse = ['-i', '--input_source']
     kwsourse = {'type': str, 'help': 'Input .sol-file. or directory with .sol-files'}
@@ -162,8 +163,12 @@ def main():
     outdir = ['-o', '--output_dir']
     kwoutdir = {'type': str, 'help': 'Output direcory name. Default: OUTPUTDIR = ../testgen_output.'}
 
+    timeout = ['-t', '--timeout']
+    kwtimeout = {'type': str, 'help': 'Test generation timeout in seconds. Default: 120s.'}
+
     parser.add_argument(*insourse, **kwsourse)
     parser.add_argument(*outdir, **kwoutdir)
+    parser.add_argument(*timeout, **kwtimeout)
     kwcov = {'type': bool, 'help': 'true - rerun / false - continue. Default: true.'}
     parser.add_argument('--rerun', **kwcov)
 
@@ -209,6 +214,9 @@ def main():
     if args.output_dir is not None:
         print('sandoutput dir set to {}'.format(args.output_dir))
         OUTPUTDIR = args.output_dir
+
+    if args.timeout is not None:
+        TIMEOUT = args.timeout
 
     for f in files:
         print(f)

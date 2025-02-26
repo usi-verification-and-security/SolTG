@@ -22,18 +22,18 @@ def init():
     CORE = os.getcwd() + '/'
     SANDBOX_DIR = CORE + "/sandbox"
     if platform == "darwin":
-        tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
+        tmp = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))))
         SOLCMC = tmp + "/deps/"
         TG_PATH = tmp + "/deps/tgnonlin"
         # TG_PATH = "/Users/konstantin.britikov/Documents/SMT/mas_fed/aeval/build/tools/nonlin/tgnonlin"
         FORGE_PATH = "forge"
     if platform == "linux" or platform == "linux2":
+        print("file:", __file__)
         tmp = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))))
         SOLCMC = tmp + "/deps/"
         TG_PATH = tmp + "/deps/tgnonlin_linux"
         FORGE_PATH = "forge" # "/home/fmfsu/.foundry/bin/forge"
     TIMEOUT = 600
-    TG_TIMEOUT = 120
     SOLVER_TYPE = "z3"  # "eld" # "z3"
 
 
@@ -296,7 +296,7 @@ def update_file(file, name):
     updated_file_name = os.path.dirname(file) + "/" + os.path.splitext(basename)[0] + \
                         "_updated" + os.path.splitext(basename)[1]
     f_updated = open(updated_file_name, 'a')
-    print("New out:", out)
+    # print("New out:", out)
     f_updated.writelines(out)
     f_updated.close()
     f.close()
@@ -330,9 +330,6 @@ def update_file(file, name):
         clean_dir(CORE + "/tmp")
         os.rmdir(CORE + "/tmp")
         os.remove(CORE + "/log.txt")
-        # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_wo_adt.smt2"
-        # smt2_wo_adt = SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + "_updated.smt2"
-        # run_adt_transform(smt2_file, smt2_wo_adt)
     return True
 
 
@@ -397,7 +394,6 @@ def run_tg(file, signature):
 def is_fun_supported(fun_signature):
     # currently only int formate is supported
     for f in fun_signature:
-        #if f != "uint":
         if "uint" not in f:
             return False
     return True
@@ -493,10 +489,11 @@ def find_contract_name(signature):
 
 
 
-def main(filename):
+def main(filename, timeout):
     start_time = time.time()
     init()
     global ADT_DIR, SOLCMC, CORE, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH
+    TG_TIMEOUT = float(timeout)
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']

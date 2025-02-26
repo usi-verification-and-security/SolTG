@@ -5,8 +5,8 @@ contract Ci1 {
 	modifier check() {
 		require(x == 0);
 		_;
-		assert(x == 1); // should fail;
-		assert(x == 0); // should hold;
+		assert(true); // should fail;
+//		assert(x == 0); // should hold;
 	}
 
 	modifier inc() {

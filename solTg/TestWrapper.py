@@ -130,6 +130,7 @@ class TestWrapper:
         test_name = name_wo_extension + ".t.sol"
         # test_file_full_path = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/test/" + test_name
         test_file_full_path = os.getcwd() + "/test/" + test_name
+        os.makedirs(os.path.dirname(test_file_full_path), exist_ok=True)
         test_file = open(test_file_full_path, 'w')
 
         # generate header/import part
@@ -162,7 +163,7 @@ class TestWrapper:
                 # ToDo: add check if constructor signature
                 init_part_of_test = [tt for tt in test if "contract_" in tt]
                 for tt in init_part_of_test:
-                    for i, c_name in enumerate(contract_names):
+
                         if 'contract_{}'.format(c_name) not in tt:
                             continue
                         if tt == 'contract_{}()'.format(c_name) or 'contract' not in test[0]:
@@ -170,6 +171,25 @@ class TestWrapper:
                         else:
                             tmp = tt
                             print("Tmp:", tmp)
+                            c_index = 0
+                            const_signature=""
+
+                            # f_name = tmp[:tmp.index('(')]
+                            # print("Name:", f_name_tmp)
+                            for j, sg in enumerate(self.signature):
+                                for y in [tmp[0] for tmp in sg]:
+                                    print("Y:", y)
+                                    if c_name in y:
+                                        c_index = j
+                                        break
+                            print(self.signature[c_index])
+                            for i, c_name in enumerate(contract_names):
+                                f_name = tmp.split('_')[1]
+                                for s in self.signature[c_index]:
+                                    if f_name == s[0]:
+                                        const_signature = s
+                                        break
+                                print("FUN SIG: ", const_signature)
                             start = tmp.index('"') + 1
                             end = len(tmp)-1
                             open_count = 0
@@ -205,9 +225,26 @@ class TestWrapper:
                             else:
                                 end = constructor_args_values.index(')')-1
                                 sender = constructor_args_values[:end+1]
-                            constructor_args_values = '(' + constructor_args_values[end + 1:]
+
+                            constructor_args_values = constructor_args_values[end + 1:-1].split(',')
+                            init_ch = 10
+                            index_p = 0
+                            # params = []
+                            while len(const_signature) > init_ch:
+                                if (const_signature[init_ch - 1] == 'address'):
+                                    constructor_args_values[index_p] = hex(int(constructor_args_values[index_p]))
+                                    print("OLD LEN: ", len(str(constructor_args_values[index_p])))
+                                    constructor_args_values[index_p] = to_checksum_address(constructor_args_values[index_p].ljust(42, '0').upper()[2:])
+                                    # params[index_p]= '0x' + params[index_p]
+                                    print("NEW PARAMS: ", constructor_args_values[index_p])
+                                if (const_signature[init_ch - 1] == 'string'):
+                                    constructor_args_values[index_p] = constructor_args_values[index_p].split("=")[1]
+                                index_p += 1
+                                init_ch += 2
+                            args = '(' + ','.join(constructor_args_values) + ')'
+                            print("Constr args:", args)
                         tt.split('_')
-                        setUp.append("\t\t{} = new {}{};\n".format(contract_vars[i], c_name, constructor_args_values))
+                        setUp.append("\t\t{} = new {}{};\n".format(contract_vars[i], c_name, args))
                         print("Set up:", setUp)
                         break
 
