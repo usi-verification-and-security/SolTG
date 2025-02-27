@@ -59,13 +59,6 @@ def prepare_dir(dir):
             os.mkdir(dir)
 
 
-def move_to_sandbox(files, add_h, was_cleaned):
-    print("========move_to_sandbox===========")
-
-
-""" write content to the file"""
-
-
 def logger(file, content):
     f = open(file, 'a')
     now = datetime.now()
@@ -94,25 +87,6 @@ def list_to_string(lst):
     return ' '.join([str(e) for e in lst])
 
 
-def command_executer_tg(command, timeout, log_file, output_file):
-    print("command: {}".format(str(command)))
-    # f = open(output_file, "a")
-    # f.flush()
-    # logger(log_file, list_to_string(command))
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-        try:
-            stdout, stderr = process.communicate(input, timeout=timeout)
-            logger(log_file, str(stdout))
-            logger(log_file, str(stderr))
-        except Exception:
-            process.kill()
-            stdout, stderr = process.communicate()
-            logger(log_file, process.stdout.read())
-            logger(log_file, process.stderr.read())
-
-
-
-
 def command_executer(command, timeout, log_file, output_file):
     print("command: {}".format(str(command)))
     f = open(output_file, "a")
@@ -125,8 +99,6 @@ def command_executer(command, timeout, log_file, output_file):
             mesage = 'command: {} has been killed after timeout {}'.format(list_to_string(command), timeout)
             print(mesage)
             stdout, stderr = process.communicate()
-            #logger(log_file, str(stdout))
-            #logger(log_file, str(stderr))
         except Exception:
             process.kill()
             process.wait()
@@ -165,7 +137,6 @@ def command_executer_docker_solcmc(command, timeout, file):
             logger(file, mesage)
             raise
         retcode = process.poll()
-        # logger(file, str(subprocess.CompletedProcess(process.args, retcode, stdout, stderr)))
         logger(file, [process.args, retcode, stdout, stderr])
         if retcode and retcode != 254 and retcode != 137:
             return False
@@ -184,10 +155,6 @@ def command_executer_docker_solcmc(command, timeout, file):
                     out.append(s + "\n")
                 if "Running with solver" in str(s):
                     start = True
-            # add "(set-option :produce-proofs true)"
-            # add "(get-proof)"
-            # out.insert(1, "(set-option :produce-proofs true)\n")
-            # out.append("(get-proof)\n")
             return out
 
 
@@ -210,60 +177,6 @@ def run_solcmc(updated_file_name, contract_name):
     os.remove(CORE + "docker_solcmc_updated")
     return smt2_list
 
-
-# def run_adt_transform(smt2_file, smt2_wo_adt):
-#     print("run adt_transform script")
-#     save = os.getcwd()
-#     os.chdir(SANDBOX_DIR)
-#     command = [ADT_DIR, smt2_file]  # , ">", smt2_wo_adt]
-#     command_executer(command, 60, SANDBOX_DIR + "/log.txt", smt2_wo_adt)
-#     # check case: (const 0)  and performe:
-#     # sed -i 's/(const 0)/((as const (Array Int Int)) 0)/' file
-#     with open(smt2_wo_adt, "r") as sources:
-#         lines = sources.readlines()
-#     with open(smt2_wo_adt, "w") as sources:
-#         for line in lines:
-#             sources.write(re.sub(r'(const 0)', '(as const (Array Int Int)) 0', line))
-#     os.chdir(save)
-
-
-def get_fun_signature(line):
-    start = line.index("function") + len("function")
-    if line.find(")") < 0:
-        # not supported case regression/types/array_aliasing_memory_1.sol,
-        # when function declared in multiple lines
-        return []
-    end = line.index(")", start + 1)
-    function_all = line[start:end + 1].strip()
-    function_name = function_all[:function_all.index("(")]
-    out = [function_name]
-    inside = function_all[function_all.index("(") + 1: function_all.index(")")]
-    if inside:
-        raw_paramentes = inside.split(',')
-        for p in raw_paramentes:
-            out.append(p.split()[0])
-    # ToDo: add types of parameters
-    return out
-
-
-def is_in_contract_type(line):
-    tockens = line.split()
-    for e in ['interface', 'contract', 'library']:
-        if e in tockens:
-            return True
-    return False
-
-
-def get_contrac_type(line):
-    if 'interface' in line:
-        return 'interface'
-    if 'contract' in line:
-        return 'contract'
-    if 'library' in line:
-        return 'library'
-    return "NaN"
-
-
 def update_file(file, name):
     print("update file: {}".format(file))
     contract_name = name
@@ -283,10 +196,6 @@ def update_file(file, name):
         if "pragma solidity" in l:
             print("pragma solidity is found")
         else:
-            # if addAssert and functionRead and ("{" in out[-1]) and not ("}" in out[-1]):
-            #     out.append("\t\tassert(true);\n")
-            #     addAssert = False
-            #     functionRead = False
             out.append(l)
             if "function" in l:
                 functionRead = True
@@ -347,7 +256,6 @@ def move_for_encoding(file, contract_name):
 
 
 def convert_for_tg(signature):
-    # format contract_name,p1,p2,p2;function_name_1,p1,p2..pn
     out = []
     print("Signature:", signature)
     for c in signature:
@@ -375,7 +283,6 @@ def run_tg(file, signature):
     global SANDBOX_DIR
     basename = os.path.basename(file)
     smt_name = os.path.splitext(basename)[0] + "_updated.smt2"
-    # smt_name = os.path.splitext(basename)[0] + "_wo_adt.smt2"
     new_smt_file_name = SANDBOX_DIR + "/" + smt_name
     print("run TG with".format(new_smt_file_name))
     logger(SANDBOX_DIR + '/log.txt', "run TG with".format(new_smt_file_name))
@@ -391,58 +298,6 @@ def run_tg(file, signature):
     os.chdir(save)
 
 
-def is_fun_supported(fun_signature):
-    # currently only int formate is supported
-    for f in fun_signature:
-        if "uint" not in f:
-            return False
-    return True
-
-
-def generate_stub(file_name, signature):
-    name_wo_extension = os.path.splitext(file_name)[0]
-    test_name = name_wo_extension + ".t.sol"
-    test_file_full_path = CORE + "/test/" + test_name
-    test_file = open(test_file_full_path, 'w')
-    out = ["//Generated Test by TG\n", "//{}\n".format(str(signature)),
-           "pragma solidity ^0.8.13;\n\n",
-           "import \"forge-std/Test.sol\";\n",
-           "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
-           f'contract {name_wo_extension}_Test is Test' + ' {\n']
-
-    # contracts declaration
-    for i, c in enumerate(signature):
-        if c[0][1] in ['contract', 'library']:  # skip interphases
-            out.append("\t{} {};\n".format(c[0][0], "c" + str(i)))
-
-    # generate setUp function
-    out.append("\n")
-    out.append("\tfunction setUp() public {\n")
-    for i, c in enumerate(signature):
-        if c[0][1] in ['contract', 'library']: # skip interphases
-            out.append("\t\t{} = new {}();\n".format("c" + str(i), c[0][0]))
-    out.append("\t}\n")
-
-    # generate Tests : one test for each function for each contract
-    index = 0
-    out.append("\n")
-    for i, c in enumerate(signature):
-        if len(c) > 1 and c[0][1] in ['contract', 'library']: # skip interphases
-            for j, funcs in enumerate(c[1:]):
-                check = is_fun_supported(funcs[1:])
-                if check:
-                    #generate random content
-                    content = ','.join([str(random.randint(1, 30)) for e in funcs[1:]])
-                    out.append(f'\tfunction test_{name_wo_extension}_{index}() public ' + '{\n')
-                    out.append("\t\t{}.{}({});\n".format("c" + str(i), funcs[0], content))
-                    out.append("\t\tassertTrue(true);\n\t}\n")
-                    index += 1
-
-    out.append("}\n")
-    test_file.writelines(out)
-    test_file.close()
-
-
 def run_test(file, signature):
     global  SANDBOX_DIR
     basename = os.path.basename(file)
@@ -450,7 +305,6 @@ def run_test(file, signature):
     print("Run tests for: {} ".format(new_name))
     save = os.getcwd()
     # get test from log
-    # generate_stub(basename, signature)
     # copy source file to "scr"
     local_path = os.getcwd()
     print(local_path + "/src/" + basename)
@@ -547,8 +401,6 @@ def main(filename, timeout):
             clean_tests_wo_duplicats = tw.remove_duplicates(clean_tests)
             file_name = os.path.basename(file)
             name_wo_extension = os.path.splitext(file_name)[0]
-            # tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
-            # run_test(file, [s])
         else:
             logger(SANDBOX_DIR + '/log.txt', "# TESTS: NO TESTS")
         if(clean_tests_wo_duplicats):

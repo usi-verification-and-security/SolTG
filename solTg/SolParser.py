@@ -4,10 +4,6 @@ import os
 import shutil
 import subprocess
 
-
-# import docker
-
-
 def is_supported_type(identifier):
     not_supported = ['array', 'contract', 'enum', 'function_external', 'struct', 'userDefinedValue']
     return not True in [n in identifier for n in not_supported]
@@ -39,9 +35,6 @@ class SolParser:
             print("FILTERED: ", len(filtered_lines))
             print("NON FILTERED: ", len(lines))
             command = ['solc', 'tmp.sol', '--ast-compact-json']
-            # command = ['docker', 'run', '-v', '/Users/konstantin.britikov/Documents/SMT/rand_proj/script:/script/', 'ethereum/solc:0.6.12', "/script/" + file.split("/")[-1], '--ast-compact-json']
-            print(command)
-            # exit(1)
             with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
                 try:
                     stdout, stderr = process.communicate(input, timeout=20)
@@ -62,17 +55,10 @@ class SolParser:
                             next_line = True
                             index = i
                     split_arr = stdout_results.split('\n')
-
-                    # print("Splitted: ", split_arr)
-                    # print("Splitted len: ", len(split_arr))
                     cut_result = '\n'.join(stdout_results.split('\n')[index + 1:])
                     cut_result = split_arr[-1]
-                    # print("Cut result: ", cut_result)
-                    # print("Index: ", index)
-                    # exit(1)
                     print("CUT: ",stdout_results)
                     data = json.loads(cut_result)
-                    # print(data)
                     return data
                 except subprocess.TimeoutExpired:
                     process.kill()

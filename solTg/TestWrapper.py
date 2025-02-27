@@ -2,19 +2,9 @@ import os.path
 import random
 
 from eth_utils import to_checksum_address
-# from PyInstaller.utils.hooks import collect_submodules
-#
+
 # # The ``eth_hash.utils.load_backend`` function does a dynamic import.
 # hiddenimports = collect_submodules('eth_hash.backends')
-
-
-def is_fun_supported(fun_signature):
-    # currently only int formate is supported
-    for f in fun_signature:
-        # if f != "uint":
-        if "uint" not in f:
-            return False
-    return True
 
 
 class TestWrapper:
@@ -41,16 +31,7 @@ class TestWrapper:
                 inside_test = True
         return raw_tests
 
-    def is_int(self, string):
-        try:
-            string_integer = int(string)
-            return 1
-        except ValueError:
-            return 0
-
     def get_values(cls, raw_list):
-        print("List:")
-        print(raw_list)
         order = []
         test = {}
         for item in raw_list:
@@ -101,17 +82,10 @@ class TestWrapper:
         test["order"] = order
         return test
 
-    def wrap(self, log_file, signature):
-        raw_tests = self.read(log_file)
-        print(raw_tests)
-        clean_tests = [self.get_values(test) for test in raw_tests]
-        return clean_tests
-
     def wrap(self):
         if os.path.isfile(self.testgen_file):
             raw_tests = self.read(self.testgen_file)
             print(raw_tests)
-            # clean_tests = [self.get_values(test) for test in raw_tests]
             return raw_tests
         else:
             return False
@@ -128,14 +102,12 @@ class TestWrapper:
     def generate_sol_test(self, clean_tests, file_name):
         name_wo_extension = os.path.splitext(file_name)[0]
         test_name = name_wo_extension + ".t.sol"
-        # test_file_full_path = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/test/" + test_name
         test_file_full_path = os.getcwd() + "/test/" + test_name
         os.makedirs(os.path.dirname(test_file_full_path), exist_ok=True)
         test_file = open(test_file_full_path, 'w')
 
         # generate header/import part
         header = ["//Generated Test by TG\n", "//{}\n".format(str(self.signature)),
-                  #"pragma solidity ^0.8.13;\n\n",
                   "import \"forge-std/Test.sol\";\n",
                   "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
                   f'contract {name_wo_extension}_Test is Test' + ' {\n']
@@ -160,10 +132,9 @@ class TestWrapper:
             # generate setUp function
             c_name = ""
             if type in ['contract', 'library']:  # skip interphases
-                # ToDo: add check if constructor signature
                 init_part_of_test = [tt for tt in test if "contract_" in tt]
                 for tt in init_part_of_test:
-
+                    for i, c_name in enumerate(contract_names):
                         if 'contract_{}'.format(c_name) not in tt:
                             continue
                         if tt == 'contract_{}()'.format(c_name) or 'contract' not in test[0]:
@@ -267,7 +238,6 @@ class TestWrapper:
                         fun_signature = s
                     if not fun_signature:  # "function not found case"
                         continue
-                    # check = is_fun_supported(fun_signature[1:])
                     # if check:
                     f_name = calls.split('__')[0]
                     for s in self.signature[c_index][1:]:
@@ -336,23 +306,5 @@ class TestWrapper:
         out = header + fields + ["\tfunction setUp() public {\n"] + setUp + ["\t}\n"] \
               + test_body + ["}\n"]
 
-        # for o in out:
-        #     print(o)
         test_file.writelines(out)
         test_file.close()
-
-
-if __name__ == '__main__':
-    tw = TestWrapper("../sandbox/testgen.txt",
-                     [[['C', 'contract'], ['test', 'uint256', 'a', 'uint256', 'b']]])  # nested_if
-    tw = TestWrapper("../sandbox/testgen.txt",
-                     [[['C', 'contract', 'uint256', 'b'], ['f', 'uint256', 'x'], ['set_max', 'uint256', 'x', 'uint256', 'y']]])  # contract_1.sol
-    tw = TestWrapper("../sandbox/testgen.txt",
-                     [[['A', 'contract', 'uint256', 'a'], ['f']],
-                      [['B', 'contract', 'uint256', 'b'], ['f'], ['g']]])  # contract_3.sol
-    # tw = TestWrapper("../sandbox/testgen.txt", [[['C', 'contract'], ['simple_if', 'uint256']]])  # simple_if
-    [print(e) for e in tw.wrap()]
-    # cleaned = tw.remove_duplicates(tw.wrap())
-    tw.generate_sol_test(tw.wrap(), "constructor_3")
-    # [print(e) for e in cleaned]
-    # python script to generate Solidity Tests from Raw log and signature of Sol file

@@ -318,8 +318,6 @@ class html_report:
             table += "  </tr>\n"
             i += 1
         table += "</table>"
-        # table = table.replace("../{}".format(dir), ".")
-        #table = table.replace(dir, ".")
         fileout.writelines(table)
         fileout.close()
 
@@ -436,25 +434,3 @@ class html_report:
             row += 1
 
         workbook.close()
-
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='python script for Report Builder')
-    insourse = ['-i', '--input_dir']
-    kwsourse = {'type': str, 'help': 'dir: where TG run is located'}
-    parser.add_argument(*insourse, **kwsourse)
-    args = parser.parse_args()
-
-    if args.input_dir is not None:
-        if os.path.isdir(args.input_dir):
-            dir = args.input_dir
-            print('report dir set to {}'.format(dir))
-    else:
-        dir = "/Users/ilyazlatkin/CLionProjects/blockchain_exp/hello_foundry/testgen_output"
-        dir = "/Users/ilyazlatkin/Downloads/testgen_output"
-        #dir = "/Users/ilyazlatkin/PycharmProjects/results/blockchain/regression_sanity_2/testgen_output"
-
-    html_report.buildReport(dir)
-    html_report.build_excel_report(dir)
-

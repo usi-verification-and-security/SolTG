@@ -42,34 +42,6 @@ def copy_dir(root_src_dir, root_dst_dir):
             shutil.copy(src_file, dst_dir)
 
 
-def move_to_sandbox(files):
-    print("========move_to_sandbox===========")
-    if not os.path.exists(SANDBOX_DIR):
-        os.mkdir(SANDBOX_DIR)
-    else:
-        print('clear output directory {}'.format(SANDBOX_DIR))
-        # remove dir
-        os_info = os.uname()
-        if (os_info.sysname != 'Darwin'):
-            clean_dir(SANDBOX_DIR)
-        else:
-            shutil.rmtree(SANDBOX_DIR)
-            os.mkdir(SANDBOX_DIR)
-    new_file_list = []
-    for f in files:
-        # create subdir for each .c file
-        basename = os.path.basename(f)
-        name_wo_ext = os.path.splitext(basename)[0]
-        subdir = SANDBOX_DIR + "/" + name_wo_ext
-        os.mkdir(subdir)
-        # copy file to individual sandbox
-        new_file = subdir + "/" + basename
-        shutil.copyfile(f, new_file)
-        new_file_list.append(new_file)
-    return new_file_list
-
-
-
 def logger(file, content):
     f = open(file, 'a')
     now = datetime.now()
@@ -89,35 +61,6 @@ def logger(file, content):
     elif type(content) is str:
         f.write(t + '\n' + content + '\n')
     f.close()
-
-
-def command_executer(command, timeout, file):
-    print("command: {}".format(str(command)))
-    logger(file, " ".join(command))
-    with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env) as process:
-        try:
-            stdout, stderr = process.communicate(input, timeout=timeout)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            mesage = 'command: {} has been killed after timeout {}'.format(" ".join(command), timeout)
-            print(mesage)
-            stdout, stderr = process.communicate()
-            logger(file, str(stdout))
-            logger(file, str(stderr))
-        except Exception:
-            process.kill()
-            process.wait()
-            mesage = 'command: {} has been killed after timeout {}'.format(" ".join(command), timeout)
-            print(mesage)
-            logger(file, mesage)
-            raise
-        retcode = process.poll()
-        logger(file, [process.args, retcode, stdout, stderr])
-        if retcode and retcode != 254:
-            return False
-        else:
-            return True
-
 
 def main_pipeline(files):
     global SOURCE_PATH, SANDBOX_DIR, OUTPUTDIR, RERUN, TIMEOUT
