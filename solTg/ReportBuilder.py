@@ -194,6 +194,7 @@ class html_report:
 
     @classmethod
     def get_coverage_data(cls, dir):
+        print("Getting coverage data from: ", dir)
         sub_dirs = [f.path for f in os.scandir(dir) if f.is_dir() and os.path.basename(f) in 'generated-coverage']
         if len(sub_dirs) != 1:
             return "<font color=\"red\">{}</font>\n".format('no data')

@@ -99,7 +99,9 @@ class TestWrapper:
                 out.append(t)
         return out
 
-    def generate_sol_test(self, clean_tests, file_name):
+    def generate_sol_test(self, clean_tests, file_name, file_path):
+        path = os.path.abspath(file_path)
+        print(path)
         name_wo_extension = os.path.splitext(file_name)[0]
         test_name = name_wo_extension + ".t.sol"
         test_file_full_path = os.getcwd() + "/test/" + test_name
@@ -109,7 +111,7 @@ class TestWrapper:
         # generate header/import part
         header = ["//Generated Test by TG\n", "//{}\n".format(str(self.signature)),
                   "import \"forge-std/Test.sol\";\n",
-                  "import \"../src/{}.sol\";\n\n".format(name_wo_extension),
+                  "import \"../{}\";\n\n".format(file_path),
                   f'contract {name_wo_extension}_Test is Test' + ' {\n']
 
         fields = []

@@ -315,11 +315,11 @@ def run_test(file, signature):
     #os.chdir("../")
     os.chdir(local_path)
     command_executer([FORGE_PATH, 'clean'], 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
-    command = [FORGE_PATH, 'test', '--match', str(os.path.splitext(basename)[0])]
+    command = [FORGE_PATH, 'test', '--match-contract', str(os.path.splitext(basename)[0])]
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
-    command = [FORGE_PATH, 'coverage', '--match', str(os.path.splitext(basename)[0]), '--report', 'lcov']
+    command = [FORGE_PATH, 'coverage', '--match-contract', str(os.path.splitext(basename)[0]), '--report', 'lcov']
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
-    command = [FORGE_PATH, 'coverage', '--match', str(os.path.splitext(basename)[0]), '--report', 'summary']
+    command = [FORGE_PATH, 'coverage', '--match-contract', str(os.path.splitext(basename)[0]), '--report', 'summary']
     command_executer(command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/test_results.txt")
     #copy lcov file
     if os.path.isfile("lcov.info"):
@@ -327,11 +327,8 @@ def run_test(file, signature):
         genhtml_report_command = ['genhtml', '--branch-coverage', '--output', SANDBOX_DIR + '/generated-coverage', SANDBOX_DIR + "/lcov.info"]
         command_executer(genhtml_report_command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     os.chdir(save)
-    #os.remove("../src/" + basename)
-    # clean_dir(local_path + "/src")
-    shutil.move(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
+    shutil.copy(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
                 SANDBOX_DIR + "/" + os.path.splitext(basename)[0] + ".t.sol")
-    # clean_dir(local_path + "/test")
 
 
 def find_contract_name(signature):
@@ -406,7 +403,7 @@ def main(filename, timeout):
         if(clean_tests_wo_duplicats):
             print("THERE ARE TESTS")
             # prepare_dir(CORE + "/test")
-            tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension)
+            tw.generate_sol_test(clean_tests_wo_duplicats, name_wo_extension, file)
             run_test(file, signature)
             # generate image
             Utils.generate_plot(SANDBOX_DIR + '/log.txt', SANDBOX_DIR + '/imag.png')

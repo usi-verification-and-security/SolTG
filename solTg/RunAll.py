@@ -16,7 +16,7 @@ def init():
     # tmp = os.path.dirname(os.path.dirname((os.path.dirname(os.path.realpath(__file__)))))
     tmp = os.getcwd()
     SANDBOX_DIR = tmp + "/sandbox"
-    OUTPUTDIR = tmp + "/test"
+    OUTPUTDIR = tmp + "/report"
 
 
 def clean_dir(dir):
