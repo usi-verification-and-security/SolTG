@@ -1,0 +1,3 @@
+[submodule "SolTG-backend"]
+	path = SolTG-backend
+	url = https://github.com/usi-verification-and-security/SolTG-backend.git
