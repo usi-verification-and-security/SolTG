@@ -324,7 +324,7 @@ def run_test(file, signature):
     #copy lcov file
     if os.path.isfile("lcov.info"):
         shutil.move("lcov.info", SANDBOX_DIR + "/lcov.info")
-        genhtml_report_command = ['genhtml', '--branch-coverage', '--output', SANDBOX_DIR + '/generated-coverage', SANDBOX_DIR + "/lcov.info"]
+        genhtml_report_command = ['genhtml', '--branch-coverage', '--output', '--ignore-errors category UNK', SANDBOX_DIR + '/generated-coverage', SANDBOX_DIR + "/lcov.info"]
         command_executer(genhtml_report_command, 60, SANDBOX_DIR + "/log.txt", SANDBOX_DIR + "/log.txt")
     os.chdir(save)
     shutil.copy(local_path + "/test/" + os.path.splitext(basename)[0] + ".t.sol",
