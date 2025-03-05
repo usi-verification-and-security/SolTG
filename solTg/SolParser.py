@@ -1,8 +1,9 @@
 import argparse
-import json
 import os
 import shutil
 import subprocess
+import solcx
+import re
 
 def is_supported_type(identifier):
     not_supported = ['array', 'contract', 'enum', 'function_external', 'struct', 'userDefinedValue']
@@ -12,11 +13,6 @@ def is_supported_type(identifier):
 class SolParser:
     @classmethod
     def read(self, file):
-        if os.path.splitext(file)[1] == ".json":
-            f = open(file, "r")
-            data = json.load(f)
-            # print(data)
-            return data
         if os.path.splitext(file)[1] == ".sol":
             command = ['forge', 'flatten', '--output', 'tmp.sol', file]
             subprocess.run(command)
@@ -30,41 +26,28 @@ class SolParser:
 
             filtered_lines = [line for line in lines if
                               not line.replace(" ", "").startswith('*') and not line.replace(" ", "").startswith('/**') and not line.replace(" ", "").startswith('/*')]
+            pragma = r"^pragma *solidity .*(\d+\.\d+\.\d+) *;$"
+            version = '0.8.28'
+            for line in filtered_lines:
+                match = re.match(pragma, line.strip())
+                if match:
+                    version = match.group(1)
+                    break
+
+            solcx.install_solc(version)
             with open('tmp.sol', 'w') as f:
                 f.writelines(filtered_lines)
             print("FILTERED: ", len(filtered_lines))
             print("NON FILTERED: ", len(lines))
-            command = ['solc', 'tmp.sol', '--ast-compact-json']
-            with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
-                try:
-                    stdout, stderr = process.communicate(input, timeout=20)
-                    print("Error: ", stderr)
-                    stdout_results = stdout.decode("utf-8")
-                    stdout_results = stdout_results.replace("\'", "\"")
-                    # print("Stdout results: ", stdout_results)
-                    next_line = False
-                    index = 0
-                    print(file)
-                    filename = file.split("/")[-1]
-                    # print("File: ", file)
-                    for i, line in enumerate(stdout_results.split('\n')):
-                        print("Iterators: ", i, " : ", line)
-                        if next_line:
-                            break
-                        if filename in line:
-                            next_line = True
-                            index = i
-                    split_arr = stdout_results.split('\n')
-                    cut_result = '\n'.join(stdout_results.split('\n')[index + 1:])
-                    cut_result = split_arr[-1]
-                    print("CUT: ",stdout_results)
-                    data = json.loads(cut_result)
-                    return data
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    mesage = 'command: {} has been killed after timeout {}'.format("solc", 20)
-                    print(mesage)
-                    return []
+            out = solcx.compile_files(
+                ['tmp.sol'],
+                 output_values=["ast"],
+                solc_version=version
+            )
+            print(list(out.keys())[0])
+            out_results = out[list(out.keys())[0]]
+            print("OUT:", out_results['ast'])
+            return out_results['ast']
 
     @classmethod
     def parse_data(self, data):
