@@ -3,6 +3,7 @@ cache/
 solTg/__pycache__
 out/
 build
+solTg.egg-info/
 
 # Ignores development broadcast logs
 !/broadcast
