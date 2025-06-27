@@ -39,22 +39,28 @@ class SolParser:
                 f.writelines(filtered_lines)
             print("FILTERED: ", len(filtered_lines))
             print("NON FILTERED: ", len(lines))
+            print(version)
             out = solcx.compile_files(
                 ['tmp.sol'],
-                 output_values=["ast"],
                 solc_version=version
             )
-            print(list(out.keys())[0])
-            out_results = out[list(out.keys())[0]]
-            print("OUT:", out_results['ast'])
+            print("OUT: ", list(out.keys()))
+            print(list(out.keys())[len(list(out.keys())) - 1])
+            out_results = out[list(out.keys())[len(list(out.keys())) - 1]]
+            print("OUT:", out_results.keys())
             return out_results['ast']
 
     @classmethod
     def parse_data(self, data):
-        n_of_contracts = len(data['nodes'])
+
+        contracts = 'nodes'
+            # lambda data: 'nodes' if 'nodes' in data['nodes'] else 'children'
+        # 'nodeType' = 'name'
+        print(contracts)
+        n_of_contracts = len(data[contracts])
         print("number of contracts: {}".format(n_of_contracts))
         out = []
-        for n in data['nodes']:
+        for n in data[contracts]:
             if n['nodeType'] != "ContractDefinition":
                 continue
             for_one_contract = []

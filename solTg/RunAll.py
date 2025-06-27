@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import solTg.SolidityTestGen as SolidityTestGen
 from solTg.ReportBuilder import html_report
+from solTg import __version__
 
 """ Tools location
 """
@@ -109,9 +110,14 @@ def main():
     timeout = ['-t', '--timeout']
     kwtimeout = {'type': str, 'help': 'Test generation timeout in seconds. Default: 120s.'}
 
+
+    version = ['-v', '--version']
+    # kwversion = {'type': n, 'help': 'SolTG version'}
+
     parser.add_argument(*insourse, **kwsourse)
     parser.add_argument(*outdir, **kwoutdir)
     parser.add_argument(*timeout, **kwtimeout)
+    parser.add_argument(*version, action='store_true')
     kwcov = {'type': bool, 'help': 'true - rerun / false - continue. Default: true.'}
     parser.add_argument('--rerun', **kwcov)
 
@@ -124,9 +130,10 @@ def main():
         if args.rerun == 'true' or args.rerun == 'True':
             RERUN = True
 
-    print(RERUN)
-
     files = []
+    if args.version is not None:
+        print('SolTG ' + str(__version__))
+        exit(1)
     if args.input_source is not None:
         if os.path.isfile(args.input_source):
             file = args.input_source

@@ -1,4 +1,5 @@
 from setuptools import setup, find_packages
+from solTg import __version__
 
 def read_requirements():
     with open('requirements.txt', 'r') as req:
@@ -10,7 +11,7 @@ with open("README.md", "r") as fh:
 setup(
     name='solTg',
     python_requires='>3.5.2',
-    version='0.2.1',
+    version=__version__,
     packages=find_packages(),
     include_package_data=True,  # This tells setuptools to include files listed in MANIFEST.in
     author = "Konstantin Britikov",
