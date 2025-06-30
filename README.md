@@ -118,3 +118,16 @@ Run forge project:
 
 #### Generate a report:
 `python3 ./scripts/ReportBuilder.py -i testgen_dir`
+
+
+
+### Local update:
+
+To build package locally from the repository execute following command:
+`python3 -m build`
+
+To install it from the repository:
+`python3 -m pip install --upgrade ./`
+
+To upload it to pypi:
+`python3 -m twine upload --repository pypi dist/*`
