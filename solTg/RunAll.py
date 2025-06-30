@@ -131,7 +131,7 @@ def main():
             RERUN = True
 
     files = []
-    if args.version is not None:
+    if args.version is not False:
         print('SolTG ' + str(__version__))
         exit(1)
     if args.input_source is not None:

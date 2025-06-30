@@ -27,10 +27,17 @@ class SolParser:
             filtered_lines = [line for line in lines if
                               not line.replace(" ", "").startswith('*') and not line.replace(" ", "").startswith('/**') and not line.replace(" ", "").startswith('/*')]
             pragma = r"^pragma *solidity .*(\d+\.\d+\.\d+) *;$"
+            strong_pragma = r"= *(\d+\.\d+\.\d+)"
             version = '0.8.28'
             for line in filtered_lines:
+                match = re.search(strong_pragma, line)
+                if match:
+                    print("strong line:", line)
+                    version = match.group(1)
+                    break
                 match = re.match(pragma, line.strip())
                 if match:
+                    print("weak line:", line)
                     version = match.group(1)
                     break
 
@@ -42,6 +49,7 @@ class SolParser:
             print(version)
             out = solcx.compile_files(
                 ['tmp.sol'],
+                # output_values=["abi", "ast", "bin-runtime"],
                 solc_version=version
             )
             print("OUT: ", list(out.keys()))
