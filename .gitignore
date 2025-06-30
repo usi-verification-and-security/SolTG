@@ -23,6 +23,7 @@ sandbox
 contracts
 utils
 outs
+report
 
 # Idea env
 .idea

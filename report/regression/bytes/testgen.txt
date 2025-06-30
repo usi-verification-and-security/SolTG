@@ -1,8 +1,0 @@
-NEW TEST 1
-contract_Con_51("address(this).balance=38", 0, 0)
-Caverage__50("address(this).balance=38", 0, 0, 0, 0)
-END TEST 2
-NEW TEST 3
-contract_Con_51("address(this).balance=38", 0, 0)
-average__23("address(this).balance=38", 0, 0, 0, 0)
-END TEST 4
