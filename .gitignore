@@ -16,6 +16,8 @@ docs/
 # Dotenv file
 .env
 
+# venv
+venv
 
 # Additional bench
 test

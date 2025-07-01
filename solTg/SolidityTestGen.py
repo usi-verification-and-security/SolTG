@@ -340,11 +340,12 @@ def find_contract_name(signature):
 
 
 
-def main(filename, timeout):
+def main(filename, timeout, version):
     start_time = time.time()
     init()
-    global ADT_DIR, SOLCMC, CORE, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH
+    global ADT_DIR, SOLCMC, CORE, ADT_DIR, TIMEOUT, SOLVER_TYPE, SANDBOX_DIR, TG_PATH, TG_TIMEOUT, FORGE_PATH, VERSION
     TG_TIMEOUT = float(timeout)
+    VERSION = version
     if not filename:
         parser = argparse.ArgumentParser(description='python script for Solidity Test Generation')
         insourse = ['-i', '--input_source']
@@ -373,7 +374,7 @@ def main(filename, timeout):
     print("File: ", file)
 
     print("Pre sig")
-    signature = SolParser.get_signature(file)
+    signature = SolParser.get_signature(file, VERSION)
     logger(SANDBOX_DIR + '/log.txt', str(signature))
     contract_name = find_contract_name(signature)
     if contract_name:

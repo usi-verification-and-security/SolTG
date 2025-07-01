@@ -12,7 +12,7 @@ def is_supported_type(identifier):
 
 class SolParser:
     @classmethod
-    def read(self, file):
+    def read(self, file, version):
         if os.path.splitext(file)[1] == ".sol":
             command = ['forge', 'flatten', '--output', 'tmp.sol', file]
             subprocess.run(command)
@@ -28,19 +28,21 @@ class SolParser:
                               not line.replace(" ", "").startswith('*') and not line.replace(" ", "").startswith('/**') and not line.replace(" ", "").startswith('/*')]
             pragma = r"^pragma *solidity .*(\d+\.\d+\.\d+) *;$"
             strong_pragma = r"= *(\d+\.\d+\.\d+)"
-            version = '0.8.28'
-            for line in filtered_lines:
-                match = re.search(strong_pragma, line)
-                if match:
-                    print("strong line:", line)
-                    version = match.group(1)
-                    break
-                match = re.match(pragma, line.strip())
-                if match:
-                    print("weak line:", line)
-                    version = match.group(1)
-                    break
-
+            # version 
+            # for line in filtered_lines:
+            #     match = re.search(strong_pragma, line)
+            #     if match:
+            #         print("strong line:", line)
+            #         version = match.group(1)
+            #         break
+            #     match = re.match(pragma, line.strip())
+            #     if match:
+            #         print("weak line:", line)
+            #         version = match.group(1)
+            #         break
+            # if int(version.split('.')[1]) < 8:
+            #     print("SOLIDITY VERSIONS BELOW 0.8 ARE NOT SUPPORTED!!")
+            #     exit(1)
             solcx.install_solc(version)
             with open('tmp.sol', 'w') as f:
                 f.writelines(filtered_lines)
@@ -66,18 +68,20 @@ class SolParser:
         # 'nodeType' = 'name'
         print(contracts)
         n_of_contracts = len(data[contracts])
-        print("number of contracts: {}".format(n_of_contracts))
+        print("number of nodes: {}".format(n_of_contracts))
         out = []
         for n in data[contracts]:
             if n['nodeType'] != "ContractDefinition":
                 continue
+            print("Contract: ", n)
             for_one_contract = []
             name = n['name']
             contract_id = n['id']
             print("name: {} id: {}".format(name, contract_id))
             contractKind = n['contractKind']
-            print("Abstract:", n['abstract'])
-            if contractKind != "contract" or n['abstract'] == 'True':
+            if 'abstract' in n:
+                print("Abstract:", n['abstract'])
+            if contractKind != "contract" or ('abstract' in n and n['abstract'] == 'True'):
                 print("Parsing stopped")
                 continue
             print("contractKind: {}".format(contractKind))
@@ -92,18 +96,26 @@ class SolParser:
             f_c = n['nodes']
             # print("Node: ", f_c)
             for fc in f_c:
-                if 'kind' not in fc:
+                # print("Func: ", fc)
+                f_type = fc['nodeType']
+                if f_type != 'FunctionDefinition':
                     continue
-                f_name = fc['name']
-                f_kind = fc['kind']
+                f_kind = ''
+                if 'kind' in fc:
+                    f_kind = fc['kind']
+                else:
+                    if fc['isConstructor']:
+                        f_kind = 'constructor'
+                    else:
+                        f_kind = 'function'
                 f_id = fc['id']
+                f_name = fc['name']
                 f_mutability = fc['stateMutability']
-                print("Kind:", f_kind)
                 print("Name:", f_name)
+                print("Type:", f_type)
+                print("Kind:", f_kind)
                 print("Id:", f_id)
                 print("Mutability:", f_mutability)
-                if f_name == "deposit":
-                    print(fc)
                 if f_kind == 'constructor':
                     print(f_name)
                     print("Constructor: ", fc)
@@ -193,8 +205,8 @@ class SolParser:
         return out
 
     @classmethod
-    def get_signature(self, file):
-        d = SolParser.read(file)
+    def get_signature(self, file, version):
+        d = SolParser.read(file, version)
         if d:
             return SolParser.parse_data(d)
         else:
@@ -214,6 +226,6 @@ if __name__ == '__main__':
     else:
         exit(1)
 
-    d = SolParser.read(f)
+    d = SolParser.read(f,'0.8.28')
     if d:
         print(SolParser.parse_data(d))
